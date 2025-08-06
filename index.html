@@ -1,68 +1,123 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Visionary Nanobots: The Eye of Tomorrow</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 40px;
-        }
-        .blog-post {
-            max-width: 800px;
-            margin: auto;
-        }
-        .blog-title {
-            text-align: center;
-            font-size: 2em;
-            margin-bottom: 20px;
-        }
-        .blog-image {
-            text-align: center;
-            margin: 20px 0;
-        }
-        .blog-image img {
-            max-width: 100%;
-            height: auto;
-        }
-        .image-caption {
-            font-style: italic;
-            color: #888;
-        }
-        .blog-text {
-            text-align: justify;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ashish Kadam | Portfolio</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      line-height: 1.6;
+      margin: 0;
+      padding: 0;
+      background-color: #f5f5f5;
+      color: #333;
+    }
+    header {
+      background: #2c3e50;
+      color: #fff;
+      padding: 20px 40px;
+      text-align: center;
+    }
+    main {
+      max-width: 960px;
+      margin: 20px auto;
+      padding: 0 20px;
+    }
+    section {
+      margin-bottom: 40px;
+    }
+    h1, h2, h3 {
+      color: #2c3e50;
+    }
+    ul {
+      padding-left: 20px;
+    }
+    a {
+      color: #2980b9;
+    }
+    .project-title {
+      font-weight: bold;
+    }
+  </style>
+
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1580905113842387"
     crossorigin="anonymous"></script>
 </head>
+
 <body>
-    <div class="blog-post">
-        <h1 class="blog-title">Visionary Nanobots: The Eye of Tomorrow</h1>
-        <div class="blog-image">
-            <img src="https://zegulas.files.wordpress.com/2023/12/dallc2b7e-2023-12-23-12.09.59-in-a-futuristic-laboratory-a-scientist-dr.-aria-sinclair-is-administering-nanobot-eye-drops-to-a-patient-ethan.-the-lab-is-sleek-and-modern-fille.png" alt="Image Description">
-            <div class="image-caption">Dr. Rutu Patel is administering nanobot eye drops to her patient, Ashish, in a futuristic laboratory. The scene captures the transformative moment of Ashish’s vision being enhanced by the advanced nanotechnology.</div>
-        </div>
-        <div class="blog-text">
-            <p>In the not-too-distant future, Dr. Rutu Patel, a renowned bio-engineer, makes a groundbreaking discovery in the field of vision correction. Tired of the limitations of conventional eyeglasses and contact lenses, Dr. Patel develops a revolutionary technology: nanobots designed to be administered as eye drops.</p>
+  <header>
+    <h1>Ashish Kadam</h1>
+    <p>Staff Software Engineer | Backend Systems | Data Pipelines | Chatbots</p>
+  </header>
+  <main>
+    <section>
+      <h2>Work Experience</h2>
+      <h3>MyGlamm (2017–2023) – Mumbai</h3>
+      <ul>
+        <li>Built the first-ever payment microservice while transitioning from a monolith, with simple full-payment/full-refund model, routed via a gateway.</li>
+        <li>Generated daily franchise-wise order and revenue reports using Core PHP and automated email dispatch via Mailchimp.</li>
+        <li>Enhanced social login via backend JWT validation in an Express.js API Gateway (Google, Facebook).</li>
+        <li>Switched MongoDB reporting to async BigQuery jobs for faster customer data reports.</li>
+        <li>Cut BigQuery costs 4× via partitioning, clustering, authorized views, and switched to flat-rate billing.</li>
+        <li>Implemented RabbitMQ-based config propagation with Redis memory sync — eliminated redeploys.</li>
+        <li>Led POC for OpenID Connect-based Auth service — rejected due to UX and business tradeoffs.</li>
+        <li>Analyzed delivery patterns using Flask backend to flag risky behaviors.</li>
+        <li>Co-designed a URL shortener using Bloom filters and efficient lookup strategies.</li>
+        <li>Researched MongoDB sharding, shard key selection and strategies for migration.</li>
+      </ul>
+      <h3>MyGlamm / GoodGlammGroup (2023–2025) – Mumbai</h3>
+      <ul>
+        <li>Benchmarked AWS DocumentDB vs MongoDB Atlas; postponed migration due to high I/O cost in Standard mode.</li>
+        <li>Designed Redis-based rate-limiting using context-aware identifiers for key API endpoints.</li>
+        <li>Built courier-wise delivery report in Google Data Studio to identify timeline bottlenecks.</li>
+        <li>Automated discount abuse detection in Python with real-time alerts via Deadmansnitch.</li>
+        <li>Refactored report workflow to event-driven architecture; reduced DB load with incremental counters and PostgreSQL materialized views.</li>
+        <li>Optimized MongoDB queries using Hatchet/MongoAnalyzer; tuned indexes to ESR rules.</li>
+        <li>Wrote PII-safe data migration tool from prod to pre-prod for test/stage sync.</li>
+        <li>Evaluated BigQuery ML ARIMA_PLUS model for inventory prediction — dropped due to low cost-benefit ratio.</li>
+        <li>Automated data ingestion via GCF + Cloud Scheduler from third-party APIs to BigQuery.</li>
+        <li>Built LLM-powered natural language-to-SQL assistant with schema-aware prompt engineering using OpenAI.</li>
+        <li>Created a GPT-4o-mini-powered chatbot for customer support, integrated with internal APIs, automating ~70% queries. Used use-case classifier to minimize token usage.</li>
+        <li>Resolved critical disk space issue by identifying logs and adding logrotate setup.</li>
+        <li>Built materialized views over 2TB+ clickstream data in BigQuery for fast analytics.</li>
+        <li>Optimized ClickHouse performance with materialized intermediate tables.</li>
+        <li>Ingested GCS vendor data to BigQuery with external/native table pipelines.</li>
+        <li>Real-time anomaly detection using BigQuery for order/region/customer patterns.</li>
+        <li>Distinguished automated abuse from real attack — added smart rate-limiting to mitigate.</li>
+        <li>Automated vendor invoice parsing using Python + Gemini API + Google Sheets output.</li>
+      </ul>
+    </section>
 
-            <p>These nanobots, microscopic and nearly invisible, are engineered to form a virtual layer on the cornea. Once administered, they work meticulously to correct any visual impairment. The nanobots, powered by the body’s own bio-electric energy, are programmed to adapt to the individual’s visual needs, providing a dynamic and personalized solution.</p>
+    <section>
+      <h2>Projects</h2>
+      <ul>
+        <li><span class="project-title">node-time-sleep:</span> <a href="https://www.npmjs.com/package/node-time-sleep" target="_blank">[npm]</a> — Python-like async/await sleep for Node.js</li>
+        <li><span class="project-title">json-cache-key-generator:</span> <a href="https://www.npmjs.com/package/json-cache-key-generator" target="_blank">[npm]</a> — Deterministic cache key generator from nested JSON</li>
+        <li><span class="project-title">remove-invisible-characters:</span> <a href="https://www.npmjs.com/package/remove-invisible-characters" target="_blank">[npm]</a> — Removes ASCII chars that break Node.js code</li>
+        <li><span class="project-title">global_mute_for_google_chrome:</span> <a href="https://github.com/zegulas/global_mute_for_google_meet" target="_blank">[GitHub]</a> <a href="https://chromewebstore.google.com/detail/cnkoaddjgkoejjpocoefhchienildfge?utm_source=item-share-cb" target="_blank">[WebStore]</a> — Chrome extension to mute/unmute Meet globally using hotkeys</li>
+        <li><span class="project-title">skip_silence:</span> <a href="https://github.com/zegulas/skip_silence" target="_blank">[GitHub]</a> — Chrome extension that speeds up YouTube videos during silence</li>
+        <li><span class="project-title">language_learner:</span> (not yet published) — Multilingual German-learning Flask app using speech recognition (Google, Whisper, Azure) with feedback + graphs</li>
+      </ul>
+    </section>
 
-            <p>Dr. Patel’s first test subject is her close friend, Ashish, who has struggled with severe myopia all his life. The procedure is simple and painless. Ashish reclines in the sleek, white chair in Dr. Patel’s lab, his eyes wide with a mix of excitement and apprehension. Dr. Patel carefully administers the eye drops, and the nanobots begin their work.</p>
+    <section>
+      <h2>Certifications & Courses</h2>
+      <ul>
+        <li>AWS Cloud Practitioner Essentials – via Udemy (Certificate available)</li>
+      </ul>
+    </section>
 
-            <p>At first, there is no change, but gradually, Ashish’s world transforms. The blurred edges of his vision sharpen, colors become more vivid, and details he hadn’t seen in years emerge with crystal clarity. It’s as if a veil has been lifted from his eyes. The nanobots have successfully created a virtual lens, perfectly tailored to his eyes.</p>
-
-            <p>Word of this innovation spreads like wildfire. Dr. Patel’s invention promises a future where eyeglasses and contact lenses are relics of the past. However, with great innovation comes great challenges. As the technology becomes more widespread, ethical and safety concerns arise. Questions about privacy and the potential for misuse of the technology surface, leading to heated debates in the scientific community and beyond.</p>
-
-            <p>Amidst this, a mysterious organization surfaces, seeking to exploit the nanobots for nefarious purposes. Dr. Patel and Ashish find themselves in a race against time to protect their creation from falling into the wrong hands, while also dealing with the moral implications of their technology.</p>
-
-            <p>The story culminates in a thrilling showdown, where the very technology that was meant to aid humanity could potentially be turned against it. Dr. Patel and Ashish must navigate a web of intrigue and danger, learning in the process that every great advancement carries with it both hope and responsibility.</p>
-
-            <p>As the dust settles, Dr. Patel continues to work on her nanobots, striving to ensure they are used for the betterment of mankind. The world watches in awe, ready for a future where the limitations of human sight are nothing but a distant memory.</p>
-        </div>
-    </div>
-    <!-- Google tag (gtag.js) -->
+    <section>
+      <h2>Internship</h2>
+      <h3>Operations Intern – BECKFriends (Jun 2016 – Aug 2016)</h3>
+      <ul>
+        <li>Developed a web system to collect delivery addresses from vendors (replacing paper, WhatsApp, email).</li>
+        <li>Automated rider allocation using area-based segmentation + Google Maps APIs.</li>
+      </ul>
+    </section>
+  </main>
+        <!-- Google tag (gtag.js) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-0BYFQWWJY9"></script>
     <script>
         window.dataLayer = window.dataLayer || [];
@@ -71,5 +126,6 @@
         
         gtag('config', 'G-0BYFQWWJY9');
     </script>
+
 </body>
 </html>
