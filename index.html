@@ -1,12 +1,531 @@
-<h1>
-    Hello, World! :)
-</h1>
-<!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-0BYFQWWJY9"></script>
-<script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag() { dataLayer.push(arguments); }
-    gtag('js', new Date());
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ashish Kadam | Portfolio</title>
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1580905113842387"
+        crossorigin="anonymous"></script>
+    <!-- Add Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Add custom CSS -->
+    <style>
+        .section-fade {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.6s ease-out;
+        }
+        .section-fade.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <!-- Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-0BYFQWWJY9"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag() { dataLayer.push(arguments); }
+        gtag('js', new Date());
+        gtag('config', 'G-0BYFQWWJY9');
+    </script>
 
-    gtag('config', 'G-0BYFQWWJY9');
-</script>
+    <!-- Navigation -->
+    <nav class="bg-white shadow-lg fixed w-full z-10">
+        <div class="container mx-auto px-4 py-3">
+            <div class="flex justify-between items-center">
+                <a href="#" class="text-xl font-bold text-gray-800">Ashish Kadam</a>
+                <div class="hidden md:flex items-center space-x-6">
+                    <a href="#about" class="text-gray-600 hover:text-gray-900">About</a>
+                    <a href="#experience" class="text-gray-600 hover:text-gray-900">Experience</a>
+                    <a href="#skills" class="text-gray-600 hover:text-gray-900">Skills</a>
+                    <a href="#education" class="text-gray-600 hover:text-gray-900">Education</a>
+                    <!-- <a href="#projects" class="text-gray-600 hover:text-gray-900">Projects</a> -->
+                    <a href="#contact" class="text-gray-600 hover:text-gray-900">Contact</a>
+                    <a href="AshishKadam - jake resume 202508081327.pdf" download class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                        Download Resume
+                    </a>
+                    
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <header class="pt-24 pb-12 bg-gradient-to-r from-blue-500 to-purple-600">
+        <div class="container mx-auto px-4 text-center">
+            <img src="1541599996321.jpeg" alt="Ashish Kadam" class="w-32 h-32 rounded-full mx-auto mb-4 border-4 border-white object-cover">
+            <h1 class="text-4xl font-bold text-white mb-4">Ashish Kadam</h1>
+            <p class="text-xl text-white opacity-90">Software Developer & Technology Enthusiast</p>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 py-12">
+        <!-- About Section -->
+        <section id="about" class="mb-20 section-fade">
+            <h2 class="text-3xl font-bold text-gray-800 mb-6">About Me</h2>
+            <p class="text-gray-600 leading-relaxed">
+                Experienced software engineer with over 10+ years of expertise in building scalable systems,
+                optimizing complex SQL/BigQuery queries, and leading high-performing teams. Passionate about AI
+                integration, chatbot development, and query performance tuning. Adept at identifying technical
+                bottlenecks and delivering innovative, cost-efficient solutions.
+            </p>
+        </section>
+
+        <!-- Projects Section -->
+        <!-- <section id="projects" class="mb-20 section-fade">
+            <h2 class="text-3xl font-bold text-gray-800 mb-6">Projects</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"> -->
+                <!-- Project Card Template -->
+                <!-- <div class="bg-white rounded-lg shadow-md overflow-hidden">
+                    <img src="project-image.jpg" alt="Project" class="w-full h-48 object-cover">
+                    <div class="p-6">
+                        <h3 class="text-xl font-bold text-gray-800 mb-2">Project Name</h3>
+                        <p class="text-gray-600 mb-4">Project description goes here</p>
+                        <div class="flex space-x-2">
+                            <span class="px-3 py-1 bg-blue-100 text-blue-600 rounded-full text-sm">Tech Stack</span>
+                        </div>
+                    </div>
+                </div> -->
+                <!-- Add more project cards as needed -->
+            <!-- </div>
+        </section> -->
+
+        <!-- Skills Section -->
+        <section id="skills" class="mb-20 section-fade">
+            <h2 class="text-3xl font-bold text-gray-800 mb-6">Technical Skills</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="bg-white p-4 rounded-lg shadow-md">
+                    <h3 class="font-semibold mb-2">Languages & Frameworks</h3>
+                    <p class="text-gray-600">JavaScript, Node.js, Express.js, Flask, Python, Core PHP, CodeIgniter, Laravel</p>
+                </div>
+                <div class="bg-white p-4 rounded-lg shadow-md">
+                    <h3 class="font-semibold mb-2">Databases & Storage</h3>
+                    <p class="text-gray-600">MongoDB, PostgreSQL, BigQuery, ClickHouse, AWS DocumentDB, Materialized Views</p>
+                </div>
+                <div class="bg-white p-4 rounded-lg shadow-md">
+                    <h3 class="font-semibold mb-2">Cloud & Infrastructure</h3>
+                    <p class="text-gray-600">Google Cloud Functions, Google Cloud Scheduler, AWS Lambda, RabbitMQ, Redis</p>
+                </div>
+                <div class="bg-white p-4 rounded-lg shadow-md">
+                    <h3 class="font-semibold mb-2">Data & Analytics</h3>
+                    <p class="text-gray-600">Google Data Studio, Query Performance Tuning, Data Pipelines, Real-Time Data Processing, Data Engineering, Data Visualization, Business Intelligence</p>
+                </div>
+                <div class="bg-white p-4 rounded-lg shadow-md">
+                    <h3 class="font-semibold mb-2">AI & Automation</h3>
+                    <p class="text-gray-600">OpenAI GPT-4o-mini, LLM Integration, Prompt Engineering, Customer Support AI Chatbot, Automation</p>
+                </div>
+                <div class="bg-white p-4 rounded-lg shadow-md">
+                    <h3 class="font-semibold mb-2">Security & Identity</h3>
+                    <p class="text-gray-600">OpenID Connect, JWT, OAuth 2.0, PII Redaction, RBAC</p>
+                </div>
+                <div class="bg-white p-4 rounded-lg shadow-md">
+                    <h3 class="font-semibold mb-2">Architecture & Patterns</h3>
+                    <p class="text-gray-600">Microservices, API Gateway, Event-Driven Architecture, Distributed Systems, Rate Limiting</p>
+                </div>
+                <div class="bg-white p-4 rounded-lg shadow-md">
+                    <h3 class="font-semibold mb-2">DevOps & Monitoring</h3>
+                    <p class="text-gray-600">System Monitoring, Logrotate, Hatchet, MongoAnalyzer, Deadmansnitch, Cost Optimization, Anomaly Detection</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Experience Section -->
+        <section id="experience" class="mb-20 section-fade">
+            <h2 class="text-3xl font-bold text-gray-800 mb-6">Experience</h2>
+            <div class="space-y-6">
+                <!-- GoodGlammGroup -->
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <div class="flex justify-between items-center mb-2">
+                        <h3 class="text-xl font-bold text-gray-800">Staff SDE at GoodGlammGroup</h3>
+                        <span class="text-gray-600">Apr, 2023 – Mar, 2025</span>
+                    </div>
+                    <div class="text-gray-600 space-y-2">
+                        <ul class="list-disc pl-5 space-y-2">
+                            <li>Evaluated AWS DocumentDB vs MongoDB Atlas, benchmarking real-world workloads and uncovering high I/O costs under Standard storage—advised postponing migration until I/O-Optimized mode matured</li>
+                            <li>Designed advanced rate-limiting for critical APIs using Redis and context-aware identifiers (beyond IP) to prevent abuse without exposing internal logic</li>
+                            <li>Built courier performance reports in Data Studio using BigQuery to calculate delays across delivery stages—helping the supply chain team optimize courier selection</li>
+                            <li>Automated discount abuse detection via a cron-triggered Python script analyzing orders-per-minute; sent real-time alerts using Deadmansnitch to prevent losses</li>
+                            <li>Refactored reporting to an event-driven model, incrementally aggregating order metrics in real-time and reducing DB load; evaluated PostgreSQL materialized views as an alternative</li>
+                            <li>Improved MongoDB performance by analyzing slow query logs (Hatchet, MongoAnalyzer), refining indexes based on ESR rules and validating improvements via Atlas metrics</li>
+                            <li>Developed an automated data sync script to migrate records from prod to pre-prod during off-peak hours with PII redaction for compliance</li>
+                            <li>Led BQML ARIMA PLUS POC to forecast warehouse stock, analyzing seasonality and stockout risks; after cost and accuracy review with Google, advised against production use</li>
+                            <li>Built data ingestion pipelines using Cloud Functions + Scheduler, fetching and transforming third-party API data (courier, warehouse) into BigQuery</li>
+                            <li>Developed an LLM assistant that converted natural language to BigQuery SQL using prompt engineering and schema context, enabling near-instant insights for leadership</li>
+                            <li>Built a GPT-4o-mini chatbot mapped to 20+ support use cases, integrated with backend APIs for real-time user/order/refund data—automated ∼70% queries, improving CSAT</li>
+                            <li>Reduced OpenAI token usage by building a use-case classifier that narrowed context passed to the LLM, cutting input tokens by ∼10× and reducing API costs</li>
+                            <li>Resolved a critical disk alert loop by analyzing log patterns and implementing logrotate on the data engineering server—eliminating recurring 100% disk space usage issues</li>
+                            <li>Created materialized views over 2TB+ clickstream data in BigQuery using partitioning and clustering to accelerate queries for data science and analytics teams</li>
+                            <li>Optimized ClickHouse performance by introducing intermediate materialized tables and improving aggregation logic—cut compute costs and reduced redundant work</li>
+                            <li>Built a GCS → BigQuery ingestion pipeline, transforming vendor data from external tables and aggregating results using materialized views for downstream access</li>
+                            <li>Developed real-time anomaly alerts for order volume and regional behavior using BigQuery thresholds—flagged potential abuse and operational issues early</li>
+                            <li>Identified traffic flagged as attacks as user behaviour misuse, not a true threat; implemented rate-limiting to reduce abuse while preserving UX for valid users</li>
+                            <li>Automated vendor invoice parsing with a Python serverless app that extracted PDFs from emails and converted them into structured Sheets using Gemini APIs</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- MyGlamm -->
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <div class="flex justify-between items-center mb-2">
+                        <h3 class="text-xl font-bold text-gray-800">Software Engineer at MyGlamm</h3>
+                        <span class="text-gray-600">Jun, 2017 – Mar, 2023</span>
+                    </div>
+                    <div class="text-gray-600 space-y-2">
+                        <ul class="list-disc pl-5 space-y-2">
+                            <li>Built the first Payment Microservice alongside a legacy monolith to support full payment and refund flows with essential transaction logging</li>
+                            <li>Automated daily order and revenue reports for each franchise using Core PHP and Mailchimp, improving reporting accuracy and reducing manual effort</li>
+                            <li>Secured social login integration in an Express.js API Gateway by verifying Google/Facebook JWT tokens at the backend, ensuring safe user onboarding</li>
+                            <li>Replaced MongoDB reporting with asynchronous BigQuery jobs, reducing production DB load and accelerating large-scale report generation</li>
+                            <li>Cut BigQuery costs by 4× via partitioning, clustering, and authorized views; later switched to flat-rate pricing for predictable cost control</li>
+                            <li>Designed real-time config propagation using RabbitMQ fan-out and Redis to reflect config updates instantly across all services without redeployments</li>
+                            <li>Led a POC for OpenID Connect-based Auth microservice, evaluated impact on UX/conversion, and advised against deployment due to business concerns</li>
+                            <li>Built a Flask service to analyze order patterns and delivery outcomes, generating risk scores to improve fraud detection and operational decisions</li>
+                            <li>Co-designed a performant URL shortener, optimizing key length and evaluated Bloom filters as an addon for fast, collision-resistant URL generation</li>
+                            <li>Conducted a MongoDB sharding POC, exploring shard key strategies and re-sharding mechanisms to scale high-volume data workloads efficiently</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- B2 Information Systems -->
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <div class="flex justify-between items-center mb-2">
+                        <h3 class="text-xl font-bold text-gray-800">Software Engineer at B2 Information Systems Pvt. Ltd.</h3>
+                        <span class="text-gray-600">Mar, 2013 – Jul, 2015</span>
+                    </div>
+                    <div class="text-gray-600 space-y-2">
+                        <ul class="list-disc pl-5 space-y-2">
+                            <li>Developed core features for client-facing projects including Ottawa Dental Society, MProfit, and the BiteBank Admin Panel, contributing to robust and maintainable codebases</li>
+                            <li>Progressed from core developer to project lead, consistently delivering high-quality releases on schedule and mentoring junior team members</li>
+                            <li>Led the migration of legacy BiteBank systems to a modern web framework, streamlining workflows and improving system reliability and maintainability</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Education Section -->
+        <section id="education" class="mb-20 section-fade">
+            <h2 class="text-3xl font-bold text-gray-800 mb-6">Education</h2>
+            <div class="space-y-6">
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <div class="flex justify-between items-center mb-2">
+                        <h3 class="text-xl font-bold text-gray-800">MMS Operations</h3>
+                        <span class="text-gray-600">2015 – 2017</span>
+                    </div>
+                    <p class="text-gray-600">Welingkar Institute of Management Development and Research, Mumbai</p>
+                </div>
+
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <div class="flex justify-between items-center mb-2">
+                        <h3 class="text-xl font-bold text-gray-800">MSc Information Technology</h3>
+                        <span class="text-gray-600">2010 – 2012</span>
+                    </div>
+                    <p class="text-gray-600">University of Mumbai, Mumbai</p>
+                </div>
+
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <div class="flex justify-between items-center mb-2">
+                        <h3 class="text-xl font-bold text-gray-800">BSc Computer Science</h3>
+                        <span class="text-gray-600">2007 – 2010</span>
+                    </div>
+                    <p class="text-gray-600">University of Mumbai, Mumbai</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Open Source Contributions Section -->
+        <section id="opensource" class="mb-20 section-fade">
+            <h2 class="text-3xl font-bold text-gray-800 mb-6">Open Source Contributions</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <h3 class="text-xl font-bold text-gray-800 mb-2">
+                        <a href="https://www.npmjs.com/package/node-time-sleep" target="_blank" class="text-blue-600 hover:text-blue-800 flex items-center">
+                            node-time-sleep
+                            <svg class="w-4 h-4 ml-1" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M11 3a1 1 0 100 2h2.586l-6.293 6.293a1 1 0 101.414 1.414L15 6.414V9a1 1 0 102 0V4a1 1 0 00-1-1h-5z"></path>
+                                <path d="M5 5a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2v-3a1 1 0 10-2 0v3H5V7h3a1 1 0 000-2H5z"></path>
+                            </svg>
+                        </a>
+                    </h3>
+                    <p class="text-gray-600">Python-like time.sleep(ms) for Node.js with non-blocking async/await support.</p>
+                </div>
+
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <h3 class="text-xl font-bold text-gray-800 mb-2">
+                        <a href="https://www.npmjs.com/package/json-cache-key-generator" target="_blank" class="text-blue-600 hover:text-blue-800 flex items-center">
+                            json-cache-key-generator
+                            <svg class="w-4 h-4 ml-1" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M11 3a1 1 0 100 2h2.586l-6.293 6.293a1 1 0 101.414 1.414L15 6.414V9a1 1 0 102 0V4a1 1 0 00-1-1h-5z"></path>
+                                <path d="M5 5a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2v-3a1 1 0 10-2 0v3H5V7h3a1 1 0 000-2H5z"></path>
+                            </svg>
+                        </a>
+                    </h3>
+                    <p class="text-gray-600">Deterministically generates a cache key from deeply nested JSON — useful for caching and memoization.</p>
+                </div>
+
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <h3 class="text-xl font-bold text-gray-800 mb-2">
+                        <a href="https://www.npmjs.com/package/remove-invisible-characters" target="_blank" class="text-blue-600 hover:text-blue-800 flex items-center">
+                            remove-invisible-characters
+                            <svg class="w-4 h-4 ml-1" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M11 3a1 1 0 100 2h2.586l-6.293 6.293a1 1 0 101.414 1.414L15 6.414V9a1 1 0 102 0V4a1 1 0 00-1-1h-5z"></path>
+                                <path d="M5 5a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2v-3a1 1 0 10-2 0v3H5V7h3a1 1 0 000-2H5z"></path>
+                            </svg>
+                        </a>
+                    </h3>
+                    <p class="text-gray-600">Removes ASCII extended characters that are invisible but can break Node.js code — ideal for input sanitization.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Side Projects Section -->
+        <section id="sideprojects" class="mb-20 section-fade">
+            <h2 class="text-3xl font-bold text-gray-800 mb-6">Side Projects</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <h3 class="text-xl font-bold text-gray-800 mb-2">
+                        <a href="https://github.com/zegulas/global_mute_for_google_meet" target="_blank" class="text-blue-600 hover:text-blue-800 flex items-center">
+                            Global Mute for Google Meet
+                            <svg class="w-4 h-4 ml-1" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M11 3a1 1 0 100 2h2.586l-6.293 6.293a1 1 0 101.414 1.414L15 6.414V9a1 1 0 102 0V4a1 1 0 00-1-1h-5z"></path>
+                            </svg>
+                        </a>
+                    </h3>
+                    <p class="text-gray-600">Chrome Extension to mute/unmute Google Meet globally using hotkeys — works even outside the browser.</p>
+                    <a href="https://chromewebstore.google.com/detail/cnkoaddjgkoejjpocoefhchienildfge" target="_blank" class="text-blue-500 hover:text-blue-700 mt-2 inline-block">Available on Chrome Web Store →</a>
+                </div>
+
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <h3 class="text-xl font-bold text-gray-800 mb-2">
+                        <a href="https://github.com/zegulas/skip_silence" target="_blank" class="text-blue-600 hover:text-blue-800 flex items-center">
+                            Skip Silence (In Progress)
+                            <svg class="w-4 h-4 ml-1" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M11 3a1 1 0 100 2h2.586l-6.293 6.293a1 1 0 101.414 1.414L15 6.414V9a1 1 0 102 0V4a1 1 0 00-1-1h-5z"></path>
+                            </svg>
+                        </a>
+                    </h3>
+                    <p class="text-gray-600">Chrome Extension that detects near-silent moments in YouTube videos and speeds up playback to 2× during silence. Returns to normal speed once speech resumes — ideal for long lectures. Supports real-time audio analysis and customizable fast-forward settings.</p>
+                </div>
+
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <h3 class="text-xl font-bold text-gray-800 mb-2">
+                        <a href="https://github.com/zegulas/learningapp" target="_blank" class="text-blue-600 hover:text-blue-800 flex items-center">
+                            Language Learner (German)
+                            <svg class="w-4 h-4 ml-1" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M11 3a1 1 0 100 2h2.586l-6.293 6.293a1 1 0 101.414 1.414L15 6.414V9a1 1 0 102 0V4a1 1 0 00-1-1h-5z"></path>
+                            </svg>
+                        </a>
+                    </h3>
+                    <p class="text-gray-600">Helps users learn German by showing translated sentences from English, Hindi, or Marathi and assessing pronunciation accuracy. Uses 4 transcription methods: SpeechRecognition interface of the Google Web Speech API, OpenAI Whisper (API & FOSS), Azure Speech-to-Text. Provides feedback on pronunciation with visual improvement graphs over multiple attempts.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Certifications Section -->
+        <section id="certifications" class="mb-20 section-fade">
+            <h2 class="text-3xl font-bold text-gray-800 mb-6">Certifications & Courses</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="bg-white p-6 rounded-lg shadow-md space-y-4">
+                    <!-- DeepLearning.AI Certifications -->
+                    <div class="flex justify-between items-center">
+                        <h3 class="font-semibold">
+                            <a href="https://learn.deeplearning.ai/accomplishments/983544ed-5afc-4ed7-8642-dcd74080c298" target="_blank" class="text-blue-600 hover:text-blue-800">
+                                Building Your Own Database Agent — DeepLearning.AI
+                            </a>
+                        </h3>
+                        <span class="text-gray-600">Jan 2025</span>
+                    </div>
+
+                    <div class="flex justify-between items-center">
+                        <h3 class="font-semibold">
+                            <a href="https://learn.deeplearning.ai/accomplishments/72cdd02d-f034-4378-aa09-a692078337c0" target="_blank" class="text-blue-600 hover:text-blue-800">
+                                Function-calling and Data Extraction with LLMs — DeepLearning.AI
+                            </a>
+                        </h3>
+                        <span class="text-gray-600">Jan 2025</span>
+                    </div>
+
+                    <div class="flex justify-between items-center">
+                        <h3 class="font-semibold">
+                            <a href="https://learn.deeplearning.ai/accomplishments/e757b6e7-4bcc-45c0-9b20-465a7d095ca4" target="_blank" class="text-blue-600 hover:text-blue-800">
+                                Functions, Tools and Agents with LangChain — DeepLearning.AI
+                            </a>
+                        </h3>
+                        <span class="text-gray-600">Jan 2025</span>
+                    </div>
+
+                    <div class="flex justify-between items-center">
+                        <h3 class="font-semibold">
+                            <a href="https://learn.deeplearning.ai/accomplishments/78b8dd8c-cbe9-47a4-98a7-252047ab1f90" target="_blank" class="text-blue-600 hover:text-blue-800">
+                                LangChain: Chat with Your Data — DeepLearning.AI
+                            </a>
+                        </h3>
+                        <span class="text-gray-600">Jan 2025</span>
+                    </div>
+
+                    <div class="flex justify-between items-center">
+                        <h3 class="font-semibold">
+                            <a href="https://learn.deeplearning.ai/accomplishments/ac65997e-eabf-456d-8ada-072ead91eea0" target="_blank" class="text-blue-600 hover:text-blue-800">
+                                LangChain for LLM Application Development — DeepLearning.AI
+                            </a>
+                        </h3>
+                        <span class="text-gray-600">Jan 2025</span>
+                    </div>
+
+                    <div class="flex justify-between items-center">
+                        <h3 class="font-semibold">
+                            <a href="https://learn.deeplearning.ai/accomplishments/2a572c1f-ec95-4a72-863b-f26b1da926c7" target="_blank" class="text-blue-600 hover:text-blue-800">
+                                Finetuning Large Language Models — DeepLearning.AI
+                            </a>
+                        </h3>
+                        <span class="text-gray-600">Jun 2024</span>
+                    </div>
+
+                    <div class="flex justify-between items-center">
+                        <h3 class="font-semibold">
+                            <a href="https://learn.deeplearning.ai/accomplishments/ab4da44c-4bf8-461c-b4ec-09c1adf2f622" target="_blank" class="text-blue-600 hover:text-blue-800">
+                                Getting Started with Mistral — DeepLearning.AI
+                            </a>
+                        </h3>
+                        <span class="text-gray-600">May 2024</span>
+                    </div>
+
+                    <div class="flex justify-between items-center">
+                        <h3 class="font-semibold">
+                            <a href="https://learn.deeplearning.ai/accomplishments/793d5764-0072-4c0e-a09a-6bdab36a0188" target="_blank" class="text-blue-600 hover:text-blue-800">
+                                Prompt Engineering with Llama 2 & 3 — DeepLearning.AI
+                            </a>
+                        </h3>
+                        <span class="text-gray-600">Apr 2024</span>
+                    </div>
+
+                    <!-- Udemy Certifications -->
+                    <div class="flex justify-between items-center">
+                        <h3 class="font-semibold">
+                            <a href="https://www.udemy.com/certificate/UC-14ff2283-66cf-4ae1-924d-2851cb50a8f6/" target="_blank" class="text-blue-600 hover:text-blue-800">
+                                Ultimate AWS Certified Cloud Practitioner CLF-C02 (2025) — Udemy
+                            </a>
+                        </h3>
+                        <span class="text-gray-600">Mar 2025</span>
+                    </div>
+
+                    <div class="flex justify-between items-center">
+                        <h3 class="font-semibold">
+                            <a href="https://www.udemy.com/certificate/UC-7a2a22fe-70fa-4d72-8363-39b860b926ed/" target="_blank" class="text-blue-600 hover:text-blue-800">
+                                JavaScript Algorithms and Data Structures Masterclass — Udemy
+                            </a>
+                        </h3>
+                        <span class="text-gray-600">Oct 2023</span>
+                    </div>
+
+                    <div class="flex justify-between items-center">
+                        <h3 class="font-semibold">
+                            <a href="https://www.udemy.com/certificate/UC-acad1312-80ff-43c0-94fa-111f50e467b8/" target="_blank" class="text-blue-600 hover:text-blue-800">
+                                Mastering OpenAI Python APIs: Unleash ChatGPT and GPT4 — Udemy
+                            </a>
+                        </h3>
+                        <span class="text-gray-600">Aug 2023</span>
+                    </div>
+
+                    <div class="flex justify-between items-center">
+                        <h3 class="font-semibold">
+                            <a href="https://www.udemy.com/certificate/UC-73865186-b319-48c0-b88b-4883e0633e26/" target="_blank" class="text-blue-600 hover:text-blue-800">
+                                Algorithmic Trading using Angel One's SmartAPI — Udemy
+                            </a>
+                        </h3>
+                        <span class="text-gray-600">Jan 2023</span>
+                    </div>
+
+                    <div class="flex justify-between items-center">
+                        <h3 class="font-semibold">
+                            <a href="https://www.udemy.com/certificate/UC-024d1f86-9efa-4890-a354-67919b57ce1b/" target="_blank" class="text-blue-600 hover:text-blue-800">
+                                Go: The Complete Developer's Guide (Golang) — Udemy
+                            </a>
+                        </h3>
+                        <span class="text-gray-600">Nov 2022</span>
+                    </div>
+
+                    <!-- HackerRank Certification -->
+                    <div class="flex justify-between items-center">
+                        <h3 class="font-semibold">
+                            <a href="https://www.hackerrank.com/certificates/056080d2ec90" target="_blank" class="text-blue-600 hover:text-blue-800">
+                                Python (Basic) — HackerRank
+                            </a>
+                        </h3>
+                        <span class="text-gray-600">Sep 2020</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Contact Section -->
+        <section id="contact" class="section-fade">
+            <h2 class="text-3xl font-bold text-gray-800 mb-6">Contact</h2>
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <div class="flex flex-col space-y-4">
+                    <!-- Obfuscated email display -->
+                    <div class="text-gray-600">
+                        <span class="mr-2">📧</span> 
+                        <span>ashishkadam2026 [at] gmail [dot] com</span>
+                    </div>
+                    
+                    <!-- Professional profiles -->
+                    <a href="https://linkedin.com/in/ashishkadam89" target="_blank" class="text-blue-600 hover:text-blue-800">
+                        <span class="mr-2">💼</span> LinkedIn Profile
+                    </a>
+                    <a href="https://github.com/zegulas" target="_blank" class="text-blue-600 hover:text-blue-800">
+                        <span class="mr-2">📦</span> GitHub Profile
+                    </a>
+                    <a href="https://leetcode.com/u/zegulas/" target="_blank" class="text-blue-600 hover:text-blue-800">
+                        <span class="mr-2">💻</span> LeetCode Profile
+                    </a>
+                    
+                    <!-- Simple JavaScript email reveal -->
+                    <button onclick="revealContact()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+                        Show Contact Details
+                    </button>
+                    <div id="contact-info" class="hidden"></div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white py-6">
+        <div class="container mx-auto px-4 text-center">
+            <p>&copy; 2025 Ashish Kadam. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <!-- Scroll Animation Script -->
+    <script>
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                }
+            });
+        }, { threshold: 0.1 });
+
+        document.querySelectorAll('.section-fade').forEach((section) => {
+            observer.observe(section);
+        });
+
+        function revealContact() {
+            const email = 'ashishkadam2026' + '@' + 'gmail.com';
+            const phone = '+91 8850108480';
+            const contactDiv = document.getElementById('contact-info');
+            contactDiv.innerHTML = `
+                <div class="mt-4 space-y-2">
+                    <p class="text-gray-600"><span class="mr-2">📧</span>${email}</p>
+                    <p class="text-gray-600"><span class="mr-2">📱</span>${phone}</p>
+                </div>
+            `;
+            contactDiv.classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>
