@@ -115,7 +115,7 @@ button:hover, select:hover { background: var(--control); }
 .primary:hover { background: var(--blue-hover); }
 :focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
 textarea:focus-visible, .diff:focus-visible { outline-offset: -2px; }
-.result { margin-top: 18px; }
+.result { margin-top: 18px; scroll-margin-top: 16px; }
 .result .toolbar { border-bottom: 1px solid var(--line); }
 h2 { margin: 0; font-size: 15px; font-weight: 680; letter-spacing: -.02em; }
 .segmented { display: flex; gap: 2px; background: var(--control); border-radius: 9px; padding: 3px; }
@@ -403,7 +403,7 @@ function render() {
   output.scrollTop = 0;
 }
 
-function compare() {
+function compare({reveal = false} = {}) {
   const setting = $('indent').value;
   const indent = setting === 'tab' ? '\t' : ' '.repeat(Number(setting));
   const formatted = inputs.map(input => {
@@ -434,6 +434,12 @@ function compare() {
   }
   comparison = {rows, added, removed};
   render();
+  if (reveal) {
+    const heading = $('diff-title');
+    heading.focus({preventScroll: true});
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    heading.closest('.result').scrollIntoView({block: 'start', behavior: reducedMotion ? 'instant' : 'smooth'});
+  }
 }
 
 for (const input of inputs) {
@@ -451,7 +457,7 @@ for (const id of ['changes', 'full']) {
     render();
   };
 }
-$('compare').onclick = compare;
+$('compare').onclick = () => compare({reveal: true});
 $('indent').onchange = () => { if (comparison) compare(); };
 $('sample').onclick = () => {
   $('left').value = '{"version":1,"project":"JSON Workbench","settings":{"theme":"dark","indent":2},"items":[{"name":"Format JSON","id":1}],"experimental":true}';
@@ -469,7 +475,7 @@ $('clear').onclick = () => {
 document.addEventListener('keydown', event => {
   if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
     event.preventDefault();
-    compare();
+    compare({reveal: true});
   }
 });
 </script>
@@ -489,7 +495,7 @@ document.addEventListener('keydown', event => {
 </div>
 </section>
 <section class="workbench result" aria-labelledby="diff-title">
-<div class="toolbar"><h2 id="diff-title">Inline diff</h2><div class="segmented" role="group" aria-label="Diff view"><button id="changes" aria-pressed="true">Changes only</button><button id="full" aria-pressed="false">Full JSON</button></div></div>
+<div class="toolbar"><h2 id="diff-title" tabindex="-1">Inline diff</h2><div class="segmented" role="group" aria-label="Diff view"><button id="changes" aria-pressed="true">Changes only</button><button id="full" aria-pressed="false">Full JSON</button></div></div>
 <div class="result-meta"><span id="status" role="status">Ready to compare</span><span class="legend"><span class="removed">− Left only</span><span class="added">+ Right only</span></span></div>
 <p id="empty" class="empty">Compare two documents to see their differences.</p>
 <div id="diff" class="diff" tabindex="0" role="region" aria-label="Inline JSON comparison" hidden></div>
