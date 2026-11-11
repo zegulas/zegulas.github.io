@@ -1,0 +1,383 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Sort, format, and compare two JSON documents in your browser.">
+<title>JSON Workbench</title>
+<style>
+:root {
+  color-scheme: dark;
+  --bg: #101314;
+  --panel: #15191a;
+  --bar: #1b2021;
+  --line: #303838;
+  --muted: #a7b2b1;
+  --fg: #eff3ef;
+  --accent: #baf77b;
+  --red: #ffc1b9;
+  --green: #b7efc9;
+  --mono: ui-monospace, SFMono-Regular, Consolas, monospace;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.55 system-ui, sans-serif; }
+.shell { max-width: 1376px; margin: auto; padding-inline: clamp(16px, 4vw, 62px); }
+header { border-bottom: 1px solid var(--line); background: #121617; }
+.mast { display: flex; align-items: center; gap: 12px; min-height: 58px; }
+.mark { color: var(--accent); background: #242e20; border: 1px solid #394b30; border-radius: 8px; padding: 4px 7px; font: 700 15px/1.5 var(--mono); }
+.privacy { margin-left: auto; color: var(--muted); font-size: 12px; display: flex; align-items: center; gap: 8px; }
+.privacy i { width: 7px; height: 7px; background: var(--accent); border-radius: 50%; }
+.intro { padding: clamp(22px, 4vh, 42px) 0 22px; }
+h1 { font-size: clamp(38px, 6vw, 60px); letter-spacing: -.065em; line-height: 1.05; margin: 0 0 10px; }
+h1 span { color: var(--accent); }
+.intro p { color: var(--muted); margin: 0; }
+.workbench { border: 1px solid var(--line); border-radius: 12px; overflow: hidden; background: var(--panel); }
+.toolbar, .pane-head, .pane-foot { background: var(--bar); }
+.toolbar { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 14px; border-bottom: 1px solid var(--line); }
+.options, .legend { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.options label { color: var(--muted); font-size: 12px; }
+button, select { font: inherit; font-size: 13px; border-radius: 6px; color: var(--fg); background: #242a2b; border: 1px solid #394243; padding: 6px 10px; }
+button { cursor: pointer; }
+button:hover, select:hover { border-color: var(--accent); }
+.primary { background: var(--accent); color: #172413; font-weight: 750; border-color: var(--accent); white-space: nowrap; padding-inline: 15px; }
+.primary:hover { background: #d1ffa3; }
+.editors { display: grid; grid-template-columns: 1fr 1fr; }
+.pane { min-width: 0; }
+.pane + .pane { border-left: 1px solid var(--line); }
+.pane-head { padding: 8px 14px; border-bottom: 1px solid var(--line); font-weight: 650; }
+.chip { display: inline-grid; place-items: center; width: 20px; height: 20px; margin-right: 5px; border-radius: 4px; font-family: var(--mono); }
+.chip.left { color: var(--red); background: #43292a; }
+.chip.right { color: var(--green); background: #244032; }
+.pane-foot { border-top: 1px solid var(--line); padding: 6px 14px; color: var(--muted); font: 12px/1.5 var(--mono); min-height: 31px; overflow-wrap: anywhere; }
+.pane-foot.error { color: var(--red); }
+textarea { display: block; width: 100%; height: clamp(145px, 24vh, 300px); min-height: 100px; resize: vertical; white-space: pre; overflow: auto; background: transparent; border: 0; margin: 0; color: var(--fg); padding: 12px 14px; font: 13px/1.65 var(--mono); tab-size: 4; }
+textarea::placeholder { color: var(--muted); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.result { margin-top: 16px; }
+h2 { margin: 0; font-size: 16px; }
+.segmented { display: flex; gap: 4px; }
+.segmented button[aria-pressed="true"] { border-color: #557744; background: #283b24; color: #dbffc0; }
+.result-meta { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; padding: 8px 14px; border-bottom: 1px solid var(--line); color: var(--muted); font: 12px/1.5 var(--mono); }
+.legend span { border-radius: 4px; padding: 2px 6px; }
+.removed { color: var(--red); background: #392527; }
+.added { color: var(--green); background: #1d362b; }
+.empty { margin: 0; padding: 22px 14px; color: var(--muted); }
+.diff { max-height: 62vh; overflow: auto; font: 13px/1.65 var(--mono); tab-size: 4; }
+.diff-row { display: grid; grid-template-columns: minmax(4ch, max-content) minmax(4ch, max-content) 3ch 1fr; width: max-content; min-width: 100%; border-left: 3px solid transparent; }
+.diff-row.removed { border-left-color: #d97978; }
+.diff-row.added { border-left-color: #5bbd88; }
+.diff-row code { white-space: pre; font: inherit; padding-right: 14px; }
+.gutter { text-align: right; padding-inline: 4px; opacity: .8; user-select: none; }
+.gutter:nth-child(3) { text-align: center; opacity: 1; font-weight: 700; }
+.gap { background: #21282a; color: var(--muted); padding: 3px 14px; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+footer { color: var(--muted); display: flex; justify-content: space-between; gap: 12px; margin: 13px 0 24px; font-size: 12px; }
+kbd { font: 11px var(--mono); background: var(--bar); border: 1px solid var(--line); border-radius: 4px; padding: 2px 5px; }
+.shortcut { white-space: nowrap; }
+@media (max-width: 650px) {
+  .editors { grid-template-columns: 1fr; }
+  .pane + .pane { border-left: 0; border-top: 1px solid var(--line); }
+  .toolbar { flex-wrap: wrap; }
+}
+@media (max-width: 390px) {
+  .privacy { font-size: 10px; }
+  .shortcut { display: none; }
+}
+</style>
+<script type="module">
+// Validate with the native parser, then retain source tokens to avoid rounding
+// large numbers or forcing JavaScript's enumeration order for integer keys.
+function formatJSON(source, order, unit) {
+  JSON.parse(source);
+  const tokens = source.match(/"(?:[^"\\]|\\[\s\S])*"|-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?|true|false|null|[\[\]{},:]/g);
+  let i = 0;
+  function read() {
+    const t = tokens[i++];
+    if (t === '{') {
+      const entries = [];
+      while (tokens[i] !== '}') {
+        const key = tokens[i++];
+        i++;
+        entries.push({key, decoded: JSON.parse(key), value: read()});
+        if (tokens[i] === ',') i++;
+      }
+      i++;
+      if (order === 'asc' || order === 'desc') {
+        const sign = order === 'asc' ? 1 : -1;
+        entries.sort((a,b) => sign * (a.decoded < b.decoded ? -1 : a.decoded > b.decoded ? 1 : 0));
+      }
+      return {entries};
+    }
+    if (t === '[') {
+      const items = [];
+      while (tokens[i] !== ']') {
+        items.push(read());
+        if (tokens[i] === ',') i++;
+      }
+      i++;
+      return {items};
+    }
+    return t;
+  }
+  function write(node, depth) {
+    if (typeof node === 'string') return node;
+    const object = !!node.entries;
+    const list = node.entries ?? node.items;
+    const open = object ? '{' : '[';
+    const close = object ? '}' : ']';
+    if (!list.length) return open + close;
+    const pad = unit.repeat(depth + 1);
+    const lines = list.map(item => pad + (object ? item.key + ': ' + write(item.value, depth + 1) : write(item, depth + 1)));
+    return open + '\n' + lines.join(',\n') + '\n' + unit.repeat(depth) + close;
+  }
+  return write(read(), 0);
+}
+
+// Myers line diff. Trim matching edges before searching the middle.
+function diffLines(left, right) {
+  let start = 0;
+  while (start < left.length && start < right.length && left[start] === right[start]) start++;
+  let endLeft = left.length;
+  let endRight = right.length;
+  while (endLeft > start && endRight > start && left[endLeft - 1] === right[endRight - 1]) {
+    endLeft--;
+    endRight--;
+  }
+
+  const a = left.slice(start, endLeft);
+  const b = right.slice(start, endRight);
+  const rows = (lines, kind) => lines.map(text => ({kind, text}));
+  const middle = a.length && b.length ? shortestEdit(a, b) : null;
+  return [
+    ...rows(left.slice(0, start), 'same'),
+    ...(middle ?? rows(a, 'removed').concat(rows(b, 'added'))),
+    ...rows(left.slice(endLeft), 'same')
+  ];
+}
+
+function shortestEdit(a, b) {
+  const trace = [];
+  let frontier = new Map([[1, 0]]);
+  // Bound the search so heavily rewritten documents remain responsive.
+  const maxDistance = Math.min(a.length + b.length, 600);
+  for (let distance = 0; distance <= maxDistance; distance++) {
+    trace.push(frontier);
+    const next = new Map();
+    for (let diagonal = -distance; diagonal <= distance; diagonal += 2) {
+      const previous = previousDiagonal(frontier, diagonal);
+      let x = frontier.get(previous) + Number(previous < diagonal);
+      let y = x - diagonal;
+      while (x < a.length && y < b.length && a[x] === b[y]) {
+        x++;
+        y++;
+      }
+      if (x >= a.length && y >= b.length) return backtrack(trace, a, b);
+      next.set(diagonal, x);
+    }
+    frontier = next;
+  }
+  return null;
+}
+
+function previousDiagonal(frontier, diagonal) {
+  const remove = frontier.get(diagonal - 1) ?? -Infinity;
+  const add = frontier.get(diagonal + 1) ?? -Infinity;
+  return remove < add ? diagonal + 1 : diagonal - 1;
+}
+
+function backtrack(trace, a, b) {
+  const result = [];
+  let x = a.length;
+  let y = b.length;
+  for (let distance = trace.length - 1; distance >= 0; distance--) {
+    const diagonal = x - y;
+    const previous = previousDiagonal(trace[distance], diagonal);
+    const previousX = trace[distance].get(previous);
+    const previousY = previousX - previous;
+    while (x > previousX && y > previousY) {
+      result.push({kind: 'same', text: a[--x]});
+      y--;
+    }
+    if (!distance) break;
+    if (previous < diagonal) result.push({kind: 'removed', text: a[--x]});
+    else result.push({kind: 'added', text: b[--y]});
+  }
+  return result.reverse();
+}
+
+
+const $ = id => document.getElementById(id);
+const inputs = [$('left'), $('right')];
+const output = $('diff');
+const status = $('status');
+let comparison;
+let view = 'changes';
+
+$('modifier').textContent = /Mac|iPad|iPhone/.test(navigator.platform) ? '⌘' : 'Ctrl';
+
+function inputStatus(input, message = '', error = false) {
+  const feedback = $(input.id + '-status');
+  feedback.textContent = message || input.value.length.toLocaleString() + ' characters';
+  feedback.classList.toggle('error', error);
+  input.setAttribute('aria-invalid', String(error));
+}
+
+function reset(message = 'Ready to compare', placeholder = 'The comparison will appear here.') {
+  comparison = undefined;
+  output.replaceChildren();
+  output.hidden = true;
+  $('empty').hidden = false;
+  $('empty').textContent = placeholder;
+  status.textContent = message;
+}
+
+function makeRow(kind, leftLine, rightLine, text) {
+  const row = document.createElement('div');
+  row.className = 'diff-row ' + kind;
+  const gutter = [leftLine, rightLine, {removed: '−', added: '+', same: ' ' }[kind]];
+  for (const value of gutter) {
+    const cell = document.createElement('span');
+    cell.className = 'gutter';
+    cell.textContent = value;
+    cell.setAttribute('aria-hidden', 'true');
+    row.append(cell);
+  }
+  const code = document.createElement('code');
+  const label = {removed: 'Left only: ', added: 'Right only: '}[kind];
+  if (label) {
+    const annotation = document.createElement('span');
+    annotation.className = 'sr-only';
+    annotation.textContent = label;
+    code.append(annotation);
+  }
+  code.append(text);
+  row.append(code);
+  return row;
+}
+
+function render() {
+  if (!comparison) return;
+  const {rows, added, removed} = comparison;
+  const identical = !added && !removed;
+  status.textContent = identical ? 'No differences' : `−${removed.toLocaleString()} left only · +${added.toLocaleString()} right only`;
+  output.hidden = identical && view === 'changes';
+  $('empty').hidden = !output.hidden;
+  $('empty').textContent = 'Both formatted documents match.';
+  const fragment = document.createDocumentFragment();
+  let leftLine = 0, rightLine = 0, skipped = 0;
+  for (const {kind, text} of rows) {
+    const leftNumber = kind === 'added' ? '' : ++leftLine;
+    const rightNumber = kind === 'removed' ? '' : ++rightLine;
+    if (view === 'changes' && kind === 'same') {
+      skipped++;
+      continue;
+    }
+    if (skipped) {
+      const gap = document.createElement('div');
+      gap.className = 'gap';
+      gap.textContent = `⋯ ${skipped.toLocaleString()} matching ${skipped === 1 ? 'line' : 'lines'}`;
+      fragment.append(gap);
+      skipped = 0;
+    }
+    fragment.append(makeRow(kind, leftNumber, rightNumber, text));
+  }
+  output.replaceChildren(fragment);
+  output.scrollTop = 0;
+}
+
+function compare() {
+  const setting = $('indent').value;
+  const indent = setting === 'tab' ? '\t' : ' '.repeat(Number(setting));
+  const formatted = inputs.map(input => {
+    try {
+      if (!input.value.trim()) {
+        inputStatus(input, 'Enter JSON to compare.', true);
+        return null;
+      }
+      const value = formatJSON(input.value, 'asc', indent);
+      inputStatus(input);
+      return value;
+    } catch (error) {
+      const message = error instanceof SyntaxError ? 'Invalid JSON' : 'Unable to format';
+      inputStatus(input, message + ' · ' + error.message, true);
+      return null;
+    }
+  });
+  if (formatted.includes(null)) {
+    reset('Check the input errors', 'Both inputs need valid JSON before comparison.');
+    inputs.find(input => input.getAttribute('aria-invalid') === 'true').focus();
+    return;
+  }
+  const rows = diffLines(...formatted.map(value => value.split('\n')));
+  let added = 0, removed = 0;
+  for (const row of rows) {
+    if (row.kind === 'added') added++;
+    if (row.kind === 'removed') removed++;
+  }
+  comparison = {rows, added, removed};
+  render();
+}
+
+for (const input of inputs) {
+  inputStatus(input);
+  input.addEventListener('input', () => {
+    inputStatus(input);
+    reset();
+  });
+}
+for (const id of ['changes', 'full']) {
+  $(id).onclick = () => {
+    view = id;
+    $('changes').setAttribute('aria-pressed', String(view === 'changes'));
+    $('full').setAttribute('aria-pressed', String(view === 'full'));
+    render();
+  };
+}
+$('compare').onclick = compare;
+$('indent').onchange = () => { if (comparison) compare(); };
+$('sample').onclick = () => {
+  $('left').value = '{"version":1,"project":"JSON Workbench","settings":{"theme":"dark","indent":2},"items":[{"name":"Format JSON","id":1}],"experimental":true}';
+  $('right').value = '{"project":"JSON Workbench","items":[{"id":1,"name":"Format JSON"},{"id":2,"name":"Compare JSON"}],"settings":{"indent":2,"theme":"system"},"version":2}';
+  compare();
+};
+$('clear').onclick = () => {
+  for (const input of inputs) {
+    input.value = '';
+    inputStatus(input);
+  }
+  reset();
+  inputs[0].focus();
+};
+document.addEventListener('keydown', event => {
+  if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
+    event.preventDefault();
+    compare();
+  }
+});
+</script>
+</head>
+<body>
+<header><div class="shell mast"><span class="mark" aria-hidden="true">{ }</span><strong>JSON Workbench</strong><span class="privacy"><i></i> Runs in your browser</span></div></header>
+<main class="shell">
+<section class="intro"><h1>JSON Compare<span>.</span></h1><p>Paste two JSON documents to compare them. Object keys are sorted A–Z at every level.</p></section>
+<section class="workbench" aria-label="JSON inputs">
+<div class="toolbar">
+<div class="options"><label for="indent">Indent</label><select id="indent"><option value="2">2 spaces</option><option value="4">4 spaces</option><option value="tab">Tabs</option></select><button id="sample">Load example</button><button id="clear">Clear both</button></div>
+<button id="compare" class="primary">Compare JSON</button>
+</div>
+<div class="editors">
+<section class="pane"><div class="pane-head"><label for="left"><span class="chip left" aria-hidden="true">−</span> Left JSON</label></div><textarea id="left" aria-describedby="left-status" spellcheck="false" autocapitalize="off" autocomplete="off" placeholder="Paste the original JSON…"></textarea><div class="pane-foot" id="left-status"></div></section>
+<section class="pane"><div class="pane-head"><label for="right"><span class="chip right" aria-hidden="true">+</span> Right JSON</label></div><textarea id="right" aria-describedby="right-status" spellcheck="false" autocapitalize="off" autocomplete="off" placeholder="Paste the JSON to compare…"></textarea><div class="pane-foot" id="right-status"></div></section>
+</div>
+</section>
+<section class="workbench result" aria-labelledby="diff-title">
+<div class="toolbar"><h2 id="diff-title">Inline diff</h2><div class="segmented" role="group" aria-label="Diff view"><button id="changes" aria-pressed="true">Changes only</button><button id="full" aria-pressed="false">Full JSON</button></div></div>
+<div class="result-meta"><span id="status" role="status">Ready to compare</span><span class="legend"><span class="removed">− Left only</span><span class="added">+ Right only</span></span></div>
+<p id="empty" class="empty">The comparison will appear here.</p>
+<div id="diff" class="diff" tabindex="0" role="region" aria-label="Inline JSON comparison" hidden></div>
+</section>
+<footer><span>Array items keep their original order.</span><span class="shortcut"><kbd id="modifier">Ctrl</kbd> <kbd>↵</kbd> to compare</span></footer>
+</main>
+</body>
+</html>
