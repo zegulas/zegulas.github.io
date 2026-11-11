@@ -14,8 +14,9 @@
 </script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="description" content="Sort, format, and compare two JSON documents in your browser.">
-<title>JSON Workbench</title>
+<meta name="description" content="Compare two JSON documents online. Automatically sort keys and see a highlighted inline diff. Pasted JSON stays in your browser.">
+<title>JSON Diff Online — Compare Two JSON Documents | JSON Workbench</title>
+<link rel="canonical" href="https://zegulas.github.io/json-workbench/">
 <style>
 :root {
   color-scheme: light dark;
@@ -148,6 +149,12 @@ kbd { background: var(--surface); border: 1px solid var(--line); border-radius: 
   .toolbar { padding-inline: 10px; }
   .segmented button { padding-inline: 6px; }
 }
+.guide { max-width: 720px; margin: 0 0 38px; padding-top: 20px; border-top: 1px solid var(--line); }
+.guide p { color: var(--muted); font-size: 14px; }
+.guide-samples { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); gap: 12px; }
+.guide h3 { margin: 0 0 6px; font-size: 12px; font-weight: 650; }
+.guide pre { margin: 0; overflow: auto; border: 1px solid var(--line); border-radius: 8px; padding: 10px; background: var(--surface); }
+.guide code { font: 12px/1.6 var(--mono); }
 </style>
 <script type="module">
 // Validate with the native parser, then retain source tokens to avoid rounding
@@ -424,7 +431,7 @@ document.addEventListener('keydown', event => {
 <body>
 <header><div class="shell mast"><span class="mark" aria-hidden="true">{ }</span><strong>JSON Workbench</strong><span class="privacy">JSON stays in your browser</span></div></header>
 <main class="shell">
-<section class="intro"><h1>Compare JSON</h1><p>Paste two documents. Keys sort automatically before comparison.</p></section>
+<section class="intro"><h1>JSON Diff</h1><p>Paste two documents. Keys sort automatically before comparison.</p></section>
 <section class="workbench" aria-label="JSON inputs">
 <div class="editors">
 <section class="pane"><div class="pane-head"><label for="left"><span class="chip left" aria-hidden="true">−</span> Left JSON</label></div><textarea id="left" aria-describedby="left-status" spellcheck="false" autocapitalize="off" autocomplete="off" placeholder="Paste the original JSON…"></textarea><div class="pane-foot" id="left-status"></div></section>
@@ -442,6 +449,16 @@ document.addEventListener('keydown', event => {
 <div id="diff" class="diff" tabindex="0" role="region" aria-label="Inline JSON comparison" hidden></div>
 </section>
 <footer><span>Array items keep their original order.</span><span class="shortcut"><kbd id="modifier">Ctrl</kbd> <kbd>↵</kbd> to compare</span></footer>
+<section class="guide" aria-labelledby="example-title">
+  <h2 id="example-title">Compare two JSON API responses</h2>
+  <p>Paste the original response on the left and the updated response on the right. Select <strong>Compare JSON</strong> to format both documents and sort object keys at every level.</p>
+  <div class="guide-samples">
+    <div><h3>Original response</h3><pre><code>{"status":"queued","id":42}</code></pre></div>
+    <div><h3>Updated response</h3><pre><code>{"id":42,"status":"ready"}</code></pre></div>
+  </div>
+  <p>The inline diff highlights the change from <code>"queued"</code> to <code>"ready"</code>. Reordering <code>id</code> and <code>status</code> has no effect because object keys are sorted before comparison. Array order is preserved.</p>
+  <p>Choose <strong>Changes only</strong> to focus on edits or <strong>Full JSON</strong> to see them in context. The comparison runs in your browser, where the pasted JSON stays.</p>
+</section>
 </main>
 </body>
 </html>
