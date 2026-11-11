@@ -227,6 +227,52 @@ function diffLines(left, right) {
   ];
 }
 
+// Keep replacements together in runs of sorted sibling properties.
+function pairPropertyChanges(rows) {
+  const ordered = [];
+  for (let start = 0; start < rows.length;) {
+    if (rows[start].kind === 'same') {
+      ordered.push(rows[start++]);
+      continue;
+    }
+    let end = start + 1;
+    while (end < rows.length && rows[end].kind !== 'same') end++;
+    const run = rows.slice(start, end);
+    const properties = run.map(row => /^([ \t]*)("(?:[^"\\]|\\.)*"): (?![{\[])/.exec(row.text));
+
+    // Leave mixed structural edits and array items in their original diff order.
+    if (properties.some(match => !match || match[1] !== properties[0]?.[1])) {
+      for (const row of run) ordered.push(row);
+      start = end;
+      continue;
+    }
+
+    const left = [], right = [];
+    for (let i = 0; i < run.length; i++) {
+      const side = run[i].kind === 'removed' ? left : right;
+      side.push({key: JSON.parse(properties[i][2]), row: run[i]});
+    }
+    const isSorted = side => side.every((item, i) => i === 0 || side[i - 1].key < item.key);
+    const rightKeys = new Set(right.map(item => item.key));
+    if (!isSorted(left) || !isSorted(right) || !left.some(item => rightKeys.has(item.key))) {
+      for (const row of run) ordered.push(row);
+      start = end;
+      continue;
+    }
+
+    let i = 0, j = 0;
+    while (i < left.length && j < right.length) {
+      const a = left[i], b = right[j];
+      if (a.key <= b.key) ordered.push(left[i++].row);
+      if (b.key <= a.key) ordered.push(right[j++].row);
+    }
+    for (; i < left.length; i++) ordered.push(left[i].row);
+    for (; j < right.length; j++) ordered.push(right[j].row);
+    start = end;
+  }
+  return ordered;
+}
+
 function shortestEdit(a, b) {
   const trace = [];
   let frontier = new Map([[1, 0]]);
@@ -380,7 +426,7 @@ function compare() {
     inputs.find(input => input.getAttribute('aria-invalid') === 'true').focus();
     return;
   }
-  const rows = diffLines(...formatted.map(value => value.split('\n')));
+  const rows = pairPropertyChanges(diffLines(...formatted.map(value => value.split('\n'))));
   let added = 0, removed = 0;
   for (const row of rows) {
     if (row.kind === 'added') added++;
