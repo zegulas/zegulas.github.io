@@ -43,9 +43,6 @@
                     <a href="#education" class="text-gray-600 hover:text-gray-900">Education</a>
                     <!-- <a href="#projects" class="text-gray-600 hover:text-gray-900">Projects</a> -->
                     <a href="#contact" class="text-gray-600 hover:text-gray-900">Contact</a>
-                    <a href="AshishKadam - jake resume 202508081327.pdf" download class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-                        Download Resume
-                    </a>
                     
                 </div>
             </div>
@@ -472,12 +469,6 @@
             <h2 class="text-3xl font-bold text-gray-800 mb-6">Contact</h2>
             <div class="bg-white p-6 rounded-lg shadow-md">
                 <div class="flex flex-col space-y-4">
-                    <!-- Obfuscated email display -->
-                    <div class="text-gray-600">
-                        <span class="mr-2">📧</span> 
-                        <span>ashishkadam2026 [at] gmail [dot] com</span>
-                    </div>
-                    
                     <!-- Professional profiles -->
                     <a href="https://linkedin.com/in/ashishkadam89" target="_blank" class="text-blue-600 hover:text-blue-800">
                         <span class="mr-2">💼</span> LinkedIn Profile
@@ -489,11 +480,6 @@
                         <span class="mr-2">💻</span> LeetCode Profile
                     </a>
                     
-                    <!-- Simple JavaScript email reveal -->
-                    <button onclick="revealContact()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
-                        Show Contact Details
-                    </button>
-                    <div id="contact-info" class="hidden"></div>
                 </div>
             </div>
         </section>
@@ -520,18 +506,6 @@
             observer.observe(section);
         });
 
-        function revealContact() {
-            const email = 'ashishkadam2026' + '@' + 'gmail.com';
-            const phone = '+91 8850108480';
-            const contactDiv = document.getElementById('contact-info');
-            contactDiv.innerHTML = `
-                <div class="mt-4 space-y-2">
-                    <p class="text-gray-600"><span class="mr-2">📧</span>${email}</p>
-                    <p class="text-gray-600"><span class="mr-2">📱</span>${phone}</p>
-                </div>
-            `;
-            contactDiv.classList.remove('hidden');
-        }
     </script>
 </body>
 </html>
