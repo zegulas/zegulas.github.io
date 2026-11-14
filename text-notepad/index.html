@@ -106,9 +106,9 @@ input[type="text"] { width: 100%; padding: 10px 16px; background: var(--panel); 
 .folder-heading h2 { margin: 0; font-size: 16px; }
 .folder-tree, .folder-tree ul { list-style: none; margin: 0; padding: 0; }
 .folder-tree ul { margin-left: 10px; padding-left: 6px; border-left: 1px solid var(--line); }
-.folder-row { display: grid; grid-template-columns: 44px minmax(0, 1fr); align-items: start; margin: 2px 0; border-radius: 6px; }
+.folder-row { display: grid; grid-template-columns: 44px minmax(0, 1fr); align-items: stretch; border-radius: 6px; }
 .folder-row:has([aria-current]) { background: var(--page); }
-.folder-row button { min-height: 32px; padding: 5px; border: 0; background: transparent; }
+.folder-row button { min-height: 30px; padding: 3px 5px; border: 0; background: transparent; }
 .folder-row button:hover { background: var(--page); text-decoration: underline; }
 .folder-row .folder-name { text-align: left; overflow-wrap: anywhere; }
 .folder-row [aria-current] { color: var(--accent); font-weight: 700; }
@@ -125,7 +125,6 @@ input[type="text"] { width: 100%; padding: 10px 16px; background: var(--panel); 
 .sidebar-entry { grid-column:2; }
 .entry[tabindex="-1"] { scroll-margin-top:16px; }
 .folder-controls { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
-.folder-row button { min-height: 44px; }
 .folder-row .folder-toggle { width: 44px; font-size: 21px; line-height: 1; }
 #entry-title[data-editing]::placeholder { color: var(--ink); opacity: 1; }
 </style>
