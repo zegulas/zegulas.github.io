@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Zettelus Notepad</title>
+<title>Zegulas Notepad</title>
 <meta name="description" content="A browser notepad that autosaves your text and flags duplicate pastes.">
 <style>
 :root {
@@ -205,7 +205,7 @@ input[type="text"] { width: 100%; padding: 10px 16px; background: var(--panel); 
   </defs>
 </svg>
 <main>
-  <h1>Zettelus Notepad</h1>
+  <h1>Zegulas Notepad</h1>
   <p>Save separate text entries in this browser. Duplicate checks ignore spaces, tabs, and line breaks.</p>
   <details class="backup-tools">
     <summary>Backup</summary>
@@ -1190,7 +1190,7 @@ backupInput.addEventListener('change', async () => {
   try {
     backup = parseBackup(await file.text());
   } catch {
-    backupStatus.textContent = 'This file is not a valid Zettelus Notepad backup.';
+    backupStatus.textContent = 'This file is not a valid Zegulas Notepad backup.';
     return;
   }
   const revisions = backup.entries.reduce((count, entry) => count + (entry.history?.length ?? 0), 0);
@@ -1296,7 +1296,7 @@ if (typeof window.showSaveFilePicker === 'function') {
   connectBackup.addEventListener('click', () => runBackupAction(async () => {
     const handle = await window.showSaveFilePicker({
       suggestedName: backupFilename,
-      types: [{description: 'Zettelus Notepad backup', accept: {'application/json': ['.json']}}]
+      types: [{description: 'Zegulas Notepad backup', accept: {'application/json': ['.json']}}]
     });
     const file = await handle.getFile();
     if (file.size && !window.confirm(`Overwrite “${handle.name}” with your current workspace? To load its contents first, use Restore from backup.`)) return;
