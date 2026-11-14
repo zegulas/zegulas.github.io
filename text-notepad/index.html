@@ -109,6 +109,10 @@ input[type="text"] { width: 100%; padding: 10px 16px; background: var(--panel); 
 .folder-resizer::after { content: ""; width: 4px; height: 100%; border-radius: 4px; background: var(--muted); }
 .folder-resizer:hover::after, .folder-resizer:focus-visible::after, .workspace.resizing .folder-resizer::after { background: var(--accent); }
 .workspace.resizing { cursor: col-resize; user-select: none; }
+.workspace.navigation-hidden { grid-template-columns: minmax(0, 1fr); }
+.workspace.navigation-hidden .folder-sidebar,
+.workspace.navigation-hidden .folder-resizer { display: none; }
+#toggle-navigation { margin-bottom: 12px; }
 .folder-sidebar { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 12px; position: sticky; top: 16px; max-height: calc(100vh - 32px); overflow: auto; }
 .folder-heading { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 10px; }
 .folder-heading h2 { margin: 0; font-size: 16px; }
@@ -214,6 +218,7 @@ input[type="text"] { width: 100%; padding: 10px 16px; background: var(--panel); 
     </div>
     <p id="backup-status" role="status"></p>
   </details>
+  <button id="toggle-navigation" type="button" aria-controls="folder-sidebar" aria-expanded="true">Hide navigation</button>
   <div class="workspace">
     <aside id="folder-sidebar" class="folder-sidebar" aria-labelledby="folders-title">
       <div class="folder-heading">
@@ -318,6 +323,17 @@ function updateFolderResizerHeight() {
 }
 updateFolderResizerHeight();
 new ResizeObserver(updateFolderResizerHeight).observe(folderSidebar, {box: 'border-box'});
+
+const navigationToggle = document.getElementById('toggle-navigation');
+navigationToggle.addEventListener('click', () => {
+  const hidden = workspace.classList.toggle('navigation-hidden');
+  navigationToggle.setAttribute('aria-expanded', String(!hidden));
+  navigationToggle.textContent = hidden ? 'Show navigation' : 'Hide navigation';
+  if (!hidden) {
+    updateFolderResizerHeight();
+    updateSidebarWidthLabel();
+  }
+});
 const minimumSidebarWidth = 200;
 let dragStart;
 
