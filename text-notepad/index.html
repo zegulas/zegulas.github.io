@@ -93,6 +93,12 @@ input[type="text"] { width: 100%; padding: 10px 16px; background: var(--panel); 
 #folder-dialog .actions, #move-dialog .actions { margin-top:14px; }
 .entry-location { font-size:12px; color:var(--muted); margin:0 0 6px; overflow-wrap:anywhere; }
 .entry-times { display:flex; flex-wrap:wrap; column-gap:18px; row-gap:3px; margin:0 0 8px; color:var(--muted); font-size:12px; font-variant-numeric:tabular-nums; }
+.list-controls { display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin:10px 0; }
+.list-controls [aria-pressed="true"] { border-color:var(--accent); color:var(--accent); }
+.list-controls input { flex:1 1 220px; min-width:0; padding:8px 12px; font:inherit; color:var(--ink); background:var(--panel); border:1px solid var(--line); border-radius:8px; }
+.entry details summary { width:fit-content; cursor:pointer; font-size:13px; }
+.entry details pre { margin-top:8px; }
+#entry-count { margin:0; font-size:13px; }
 </style>
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-0BYFQWWJY9"></script>
 <script>
@@ -128,6 +134,12 @@ input[type="text"] { width: 100%; padding: 10px 16px; background: var(--panel); 
   </form>
   <section class="saved" aria-labelledby="saved-title">
     <h2 id="saved-title">Saved entries</h2>
+    <div class="list-controls">
+      <button type="button" id="folder-entries" aria-pressed="true">This folder</button>
+      <button type="button" id="all-entries" aria-pressed="false">All entries</button>
+      <input type="search" id="entry-search" aria-label="Search all entries" placeholder="Search title, text, or folder">
+    </div>
+    <p id="entry-count" role="status" aria-atomic="true"></p>
     <p id="empty">No entries yet.</p>
     <div id="entries"></div>
   </section>
@@ -202,6 +214,10 @@ const moveDialog = document.getElementById('move-dialog');
 const moveDestination = document.getElementById('move-destination');
 const moveError = document.getElementById('move-error');
 let activeFolder = null;
+let showAllEntries = false;
+const search = document.getElementById('entry-search');
+const allEntriesButton = document.getElementById('all-entries');
+const folderEntriesButton = document.getElementById('folder-entries');
 let movingId;
 let editingEntry;
 let editingId;
@@ -245,6 +261,8 @@ function folderButton(label, id) {
   button.textContent = label;
   button.addEventListener('click', () => {
     activeFolder = id;
+    showAllEntries = false;
+    search.value = '';
     refresh();
     document.querySelector('#folder-path [aria-current]')?.focus();
   });
@@ -287,7 +305,7 @@ function entryTimestamp(label, value) {
   return field;
 }
 
-function entryCard(entry, preview = false, folders = []) {
+function entryCard(entry, preview = false, folders = [], compact = false) {
   const card = document.createElement('article');
   card.className = 'entry';
   const title = document.createElement('h3');
@@ -307,6 +325,7 @@ function entryCard(entry, preview = false, folders = []) {
       renameDialog.showModal();
     });
     rename.className = 'rename-entry';
+    rename.dataset.entryId = entry.id;
     const edit = document.createElement('button');
     edit.type = 'button';
     edit.textContent = 'Edit';
@@ -325,7 +344,7 @@ function entryCard(entry, preview = false, folders = []) {
   const content = document.createElement('pre');
   content.textContent = preview && entry.text.length > 400 ? entry.text.slice(0, 400) + '…' : entry.text;
   card.append(header);
-  if (preview) {
+  if (preview || compact) {
     const location = document.createElement('p');
     location.className = 'entry-location';
     location.textContent = folderPath(entry.folderId, folders);
@@ -337,18 +356,43 @@ function entryCard(entry, preview = false, folders = []) {
     times.append(entryTimestamp('Created at', entry.createdAt), entryTimestamp('Updated at', entry.updatedAt));
     card.append(times);
   }
-  card.append(content);
+  if (compact) {
+    const details = document.createElement('details');
+    const summary = document.createElement('summary');
+    summary.textContent = 'Show text';
+    details.append(summary, content);
+    card.append(details);
+  } else {
+    card.append(content);
+  }
   return card;
 }
 
 function render(entries, folders = readFolders()) {
   renderFolders(folders);
-  const visible = entries.filter(entry => (entry.folderId ?? null) === activeFolder);
-  const list = document.getElementById('entries');
+  renderEntries(entries, folders);
+}
+
+function renderEntries(entries, folders) {
+  const query = search.value.trim().toLowerCase();
+  const visible = entries.filter(entry => {
+    if (!showAllEntries) return (entry.folderId ?? null) === activeFolder;
+    if (!query) return true;
+    const title = entry.title || 'Entry ' + entry.id;
+    return [title, entry.text, folderPath(entry.folderId, folders)]
+      .some(value => value.toLowerCase().includes(query));
+  });
+  allEntriesButton.setAttribute('aria-pressed', String(showAllEntries));
+  folderEntriesButton.setAttribute('aria-pressed', String(!showAllEntries));
   const cards = document.createDocumentFragment();
-  for (const entry of [...visible].reverse()) cards.append(entryCard(entry));
-  list.replaceChildren(cards);
-  document.getElementById('empty').hidden = visible.length > 0;
+  for (const entry of [...visible].reverse()) cards.append(entryCard(entry, false, folders, showAllEntries));
+  document.getElementById('entries').replaceChildren(cards);
+  document.getElementById('entry-count').textContent = showAllEntries
+    ? visible.length + ' of ' + entries.length + ' entries'
+    : '';
+  const empty = document.getElementById('empty');
+  empty.hidden = visible.length > 0;
+  empty.textContent = query ? 'No entries match your search.' : 'No entries yet.';
 }
 
 function refresh() {
@@ -506,8 +550,7 @@ document.getElementById('rename-form').addEventListener('submit', event => {
     }
     renameDialog.close();
     render(entries);
-    const visible = entries.filter(entry => (entry.folderId ?? null) === activeFolder).reverse();
-    document.querySelectorAll('#entries .rename-entry')[visible.findIndex(entry => entry.id === editingId)]?.focus();
+    document.querySelector('.rename-entry[data-entry-id="' + editingId + '"]')?.focus();
     report('Title updated.');
   } catch {
     renameError.textContent = 'Could not save the title. Your changes are still here.';
@@ -583,6 +626,27 @@ document.getElementById('move-form').addEventListener('submit', event => {
   } catch {
     moveError.textContent = 'Could not move this entry.';
   }
+});
+function updateEntryList() {
+  try {
+    renderEntries(readEntries(), readFolders());
+  } catch {
+    report('Saved entries are unavailable in this browser.', true);
+  }
+}
+
+search.addEventListener('input', () => {
+  showAllEntries = true;
+  updateEntryList();
+});
+allEntriesButton.addEventListener('click', () => {
+  showAllEntries = true;
+  updateEntryList();
+});
+folderEntriesButton.addEventListener('click', () => {
+  showAllEntries = false;
+  search.value = '';
+  updateEntryList();
 });
 refresh();
 </script>
