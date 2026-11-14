@@ -16,6 +16,10 @@
   --accent: #2459cf;
   --button-text: white;
   --warning: #9b432b;
+  --folder-blue: #3269bf;
+  --folder-teal: #08796e;
+  --folder-violet: #8054b3;
+  --folder-amber: #996019;
 }
 @media (prefers-color-scheme: dark) {
   :root {
@@ -27,6 +31,10 @@
     --accent: #9cb9ff;
     --button-text: #13254e;
     --warning: #ffc0a9;
+    --folder-blue: #8ab5ff;
+    --folder-teal: #6ad6c4;
+    --folder-violet: #c5a3f4;
+    --folder-amber: #edb66c;
   }
 }
 * { box-sizing: border-box; }
@@ -105,7 +113,24 @@ input[type="text"] { width: 100%; padding: 10px 16px; background: var(--panel); 
 .folder-heading { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 10px; }
 .folder-heading h2 { margin: 0; font-size: 16px; }
 .folder-tree, .folder-tree ul { list-style: none; margin: 0; padding: 0; }
-.folder-tree ul { margin-left: 10px; padding-left: 6px; border-left: 1px solid var(--line); }
+.folder-tree ul {
+  margin-left: 10px;
+  padding-left: 6px;
+  border-left: 1px solid var(--line);
+  border-left-color: color-mix(in srgb, var(--folder-accent, var(--line)) 60%, var(--panel));
+}
+.folder-tree [data-accent="blue"] { --folder-accent: var(--folder-blue); }
+.folder-tree [data-accent="teal"] { --folder-accent: var(--folder-teal); }
+.folder-tree [data-accent="violet"] { --folder-accent: var(--folder-violet); }
+.folder-tree [data-accent="amber"] { --folder-accent: var(--folder-amber); }
+.folder-icon.folder-symbol {
+  align-self: flex-start;
+  margin-top: .25em;
+  width: 16px;
+  height: 16px;
+  background-color: var(--folder-accent, var(--muted));
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M3 6a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z' fill='none' stroke='black' stroke-width='2' stroke-linejoin='round'/%3E%3C/svg%3E") center / contain no-repeat;
+}
 .folder-row { display: grid; grid-template-columns: 44px minmax(0, 1fr); align-items: stretch; border-radius: 6px; }
 .folder-row:has([aria-current]) { background: var(--page); }
 .folder-row button { min-height: 30px; padding: 3px 5px; border: 0; background: transparent; }
@@ -441,7 +466,7 @@ function focusCurrentFolder() {
 
 function treeLabel(button, icon, name) {
   const symbol = document.createElement('span');
-  symbol.className = 'folder-icon';
+  symbol.className = icon ? 'folder-icon' : 'folder-icon folder-symbol';
   symbol.textContent = icon;
   symbol.setAttribute('aria-hidden', 'true');
   button.append(symbol, name);
@@ -483,14 +508,17 @@ function renderFolders(folders, entries) {
     return item;
   }
 
-  function branch(id, name) {
+  const folderAccents = ['blue', 'teal', 'violet', 'amber'];
+
+  function branch(id, name, depth) {
     const item = document.createElement('li');
+    if (depth >= 0) item.dataset.accent = folderAccents[depth % folderAccents.length];
     const row = document.createElement('div');
     row.className = 'folder-row';
     const select = document.createElement('button');
     select.type = 'button';
     select.className = 'folder-name';
-    treeLabel(select, '📁', name);
+    treeLabel(select, '', name);
     if (id === activeFolder) select.setAttribute('aria-current', 'location');
     select.addEventListener('click', () => {
       activeFolder = id;
@@ -515,7 +543,7 @@ function renderFolders(folders, entries) {
     const list = document.createElement('ul');
     list.id = id === null ? 'folder-children-root' : 'folder-children-' + id;
     toggle.setAttribute('aria-controls', list.id);
-    for (const child of children) list.append(branch(child.id, child.name));
+    for (const child of children) list.append(branch(child.id, child.name, depth + 1));
     for (const entry of notes) list.append(entryBranch(entry, id));
 
     function updateExpansion() {
@@ -537,7 +565,7 @@ function renderFolders(folders, entries) {
     return item;
   }
 
-  document.getElementById('folders').replaceChildren(branch(null, 'Root'));
+  document.getElementById('folders').replaceChildren(branch(null, 'Root', -1));
 }
 
 function report(message, error = false) {
