@@ -139,10 +139,14 @@ input[type="text"] { width: 100%; padding: 10px 16px; background: var(--panel); 
 }
 .folder-tree ul > .folder-row::after,
 .folder-tree ul > li:has(> .folder-row > span:first-child)::after { width: 52px; }
-.folder-tree [data-accent="blue"] { --folder-accent: var(--folder-blue); }
-.folder-tree [data-accent="orange"] { --folder-accent: var(--folder-orange); }
-.folder-tree [data-accent="green"] { --folder-accent: var(--folder-green); }
-.folder-tree [data-accent="magenta"] { --folder-accent: var(--folder-magenta); }
+.folder-tree [data-accent="blue"] { --folder-accent: var(--folder-blue); --folder-icon-filter: url(#folder-tint-blue); }
+#folder-tint-blue feFlood { flood-color: var(--folder-blue); }
+.folder-tree [data-accent="orange"] { --folder-accent: var(--folder-orange); --folder-icon-filter: url(#folder-tint-orange); }
+#folder-tint-orange feFlood { flood-color: var(--folder-orange); }
+.folder-tree [data-accent="green"] { --folder-accent: var(--folder-green); --folder-icon-filter: url(#folder-tint-green); }
+#folder-tint-green feFlood { flood-color: var(--folder-green); }
+.folder-tree [data-accent="magenta"] { --folder-accent: var(--folder-magenta); --folder-icon-filter: url(#folder-tint-magenta); }
+#folder-tint-magenta feFlood { flood-color: var(--folder-magenta); }
 .folder-tree [data-accent] > .folder-row > .folder-name { color: var(--folder-accent); }
 .folder-row { display: grid; grid-template-columns: 44px minmax(0, 1fr); align-items: stretch; border-radius: 6px; }
 .folder-row:has([aria-current]) { background: var(--page); }
@@ -165,7 +169,9 @@ input[type="text"] { width: 100%; padding: 10px 16px; background: var(--panel); 
 .search-preview { margin: 0 0 10px; }
 .entry mark { background: #ffe36d; color: #211900; }
 .folder-row .folder-name { display:flex; align-items:baseline; gap:7px; }
-.folder-icon { flex: none; font-size: 14px; }
+.folder-icon { flex: none; font-size: 14px; filter: var(--folder-icon-filter, url(#folder-tint-root)); }
+#folder-tint-root feFlood { flood-color: var(--muted); }
+.folder-icon-filters { position: absolute; width: 0; height: 0; pointer-events: none; }
 .sidebar-entry { grid-column:2; }
 .entry[tabindex="-1"] { scroll-margin-top:16px; }
 .folder-controls { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
@@ -185,6 +191,15 @@ input[type="text"] { width: 100%; padding: 10px 16px; background: var(--panel); 
 </script>
 </head>
 <body>
+<svg class="folder-icon-filters" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+  <defs>
+    <filter id="folder-tint-root"><feFlood/><feComposite in2="SourceAlpha" operator="in"/></filter>
+    <filter id="folder-tint-blue"><feFlood/><feComposite in2="SourceAlpha" operator="in"/></filter>
+    <filter id="folder-tint-orange"><feFlood/><feComposite in2="SourceAlpha" operator="in"/></filter>
+    <filter id="folder-tint-green"><feFlood/><feComposite in2="SourceAlpha" operator="in"/></filter>
+    <filter id="folder-tint-magenta"><feFlood/><feComposite in2="SourceAlpha" operator="in"/></filter>
+  </defs>
+</svg>
 <main>
   <h1>Text Notepad</h1>
   <p>Save separate text entries in this browser. Duplicate checks ignore spaces, tabs, and line breaks.</p>
