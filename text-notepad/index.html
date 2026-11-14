@@ -5,9 +5,23 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Zegulas Notepad</title>
 <meta name="description" content="A browser notepad that autosaves your text and flags duplicate pastes.">
+<script>
+const notepadThemeKey = 'zegulas.text-notepad.theme';
+const notepadSystemTheme = window.matchMedia('(prefers-color-scheme: dark)');
+let notepadTheme;
+try {
+  notepadTheme = localStorage.getItem(notepadThemeKey);
+} catch {}
+if (notepadTheme !== 'light' && notepadTheme !== 'dark') notepadTheme = null;
+
+function applyNotepadTheme() {
+  document.documentElement.dataset.theme = notepadTheme ?? (notepadSystemTheme.matches ? 'dark' : 'light');
+}
+applyNotepadTheme();
+</script>
 <style>
 :root {
-  color-scheme: light dark;
+  color-scheme: light;
   --page: #f5f6f8;
   --panel: #fff;
   --ink: #191c23;
@@ -21,21 +35,20 @@
   --folder-green: #137044;
   --folder-magenta: #a32b72;
 }
-@media (prefers-color-scheme: dark) {
-  :root {
-    --page: #17191e;
-    --panel: #202329;
-    --ink: #f1f3f8;
-    --muted: #adb5c4;
-    --line: #383e49;
-    --accent: #9cb9ff;
-    --button-text: #13254e;
-    --warning: #ffc0a9;
-    --folder-blue: #83b5ff;
-    --folder-orange: #ffb365;
-    --folder-green: #77daa1;
-    --folder-magenta: #f29ace;
-  }
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --page: #17191e;
+  --panel: #202329;
+  --ink: #f1f3f8;
+  --muted: #adb5c4;
+  --line: #383e49;
+  --accent: #9cb9ff;
+  --button-text: #13254e;
+  --warning: #ffc0a9;
+  --folder-blue: #83b5ff;
+  --folder-orange: #ffb365;
+  --folder-green: #77daa1;
+  --folder-magenta: #f29ace;
 }
 * { box-sizing: border-box; }
 body { margin: 0; background: var(--page); color: var(--ink); font: 15px/1.55 system-ui, sans-serif; }
@@ -112,7 +125,7 @@ input[type="text"] { width: 100%; padding: 10px 16px; background: var(--panel); 
 .workspace.navigation-hidden { grid-template-columns: minmax(0, 1fr); }
 .workspace.navigation-hidden .folder-sidebar,
 .workspace.navigation-hidden .folder-resizer { display: none; }
-#toggle-navigation { margin-bottom: 12px; }
+.workspace-controls { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
 .folder-sidebar { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 12px; position: sticky; top: 16px; max-height: calc(100vh - 32px); overflow: auto; }
 .folder-heading { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 10px; }
 .folder-heading h2 { margin: 0; font-size: 16px; }
@@ -218,7 +231,10 @@ input[type="text"] { width: 100%; padding: 10px 16px; background: var(--panel); 
     </div>
     <p id="backup-status" role="status"></p>
   </details>
-  <button id="toggle-navigation" type="button" aria-controls="folder-sidebar" aria-expanded="true">Hide navigation</button>
+  <div class="workspace-controls">
+    <button id="toggle-navigation" type="button" aria-controls="folder-sidebar" aria-expanded="true">Hide navigation</button>
+    <button id="toggle-theme" type="button">Dark mode</button>
+  </div>
   <div class="workspace">
     <aside id="folder-sidebar" class="folder-sidebar" aria-labelledby="folders-title">
       <div class="folder-heading">
@@ -323,6 +339,21 @@ function updateFolderResizerHeight() {
 }
 updateFolderResizerHeight();
 new ResizeObserver(updateFolderResizerHeight).observe(folderSidebar, {box: 'border-box'});
+
+const themeToggle = document.getElementById('toggle-theme');
+function updateThemeToggle() {
+  applyNotepadTheme();
+  themeToggle.textContent = document.documentElement.dataset.theme === 'dark' ? 'Light mode' : 'Dark mode';
+}
+themeToggle.addEventListener('click', () => {
+  notepadTheme = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+  try {
+    localStorage.setItem(notepadThemeKey, notepadTheme);
+  } catch {}
+  updateThemeToggle();
+});
+notepadSystemTheme.addEventListener('change', updateThemeToggle);
+updateThemeToggle();
 
 const navigationToggle = document.getElementById('toggle-navigation');
 navigationToggle.addEventListener('click', () => {
