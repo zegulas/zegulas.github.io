@@ -158,6 +158,8 @@ input[type="text"] { width: 100%; padding: 10px 16px; background: var(--panel); 
   width: 12px;
   border-top: 2px solid var(--branch-guide);
 }
+.folder-tree ul > li.active-folder-path::before { border-left-width: 3px; }
+.folder-tree ul > li.active-folder-path::after { border-top-width: 3px; }
 .folder-tree ul > .folder-row::after,
 .folder-tree ul > li:has(> .folder-row > span:first-child)::after { width: 52px; }
 .folder-tree [data-accent="blue"] { --folder-accent: var(--folder-blue); --folder-icon-filter: url(#folder-tint-blue); }
@@ -603,11 +605,13 @@ function renderFolders(folders, entries) {
     return item;
   }
 
-  const folderAccents = ['blue', 'orange', 'green', 'magenta', 'teal', 'gold'];
+  const folderAccents = ['blue', 'gold', 'magenta', 'green', 'orange', 'teal'];
+  const activePath = new Set(folderTrail(activeFolder, folders).map(folder => folder.id));
 
   function branch(id, name, accent) {
     const item = document.createElement('li');
     if (accent) item.dataset.accent = accent;
+    if (activePath.has(id)) item.classList.add('active-folder-path');
     const row = document.createElement('div');
     row.className = 'folder-row';
     const select = document.createElement('button');
