@@ -572,7 +572,13 @@ function renderFolders(folders, entries) {
     const select = document.createElement('button');
     select.type = 'button';
     select.className = 'folder-name';
-    treeLabel(select, '📁', name);
+    const children = childrenByParent.get(id) ?? [];
+    const notes = entriesByFolder.get(id) ?? [];
+    const counts = `(${children.length}, ${notes.length})`;
+    const description = `${children.length} ${children.length === 1 ? 'subfolder' : 'subfolders'}, ${notes.length} ${notes.length === 1 ? 'entry' : 'entries'}`;
+    treeLabel(select, '📁', `${name} ${counts}`);
+    select.title = description;
+    select.setAttribute('aria-label', `${name} ${counts}, ${description}`);
     if (id === activeFolder) select.setAttribute('aria-current', 'location');
     select.addEventListener('click', () => {
       activeFolder = id;
@@ -583,8 +589,6 @@ function renderFolders(folders, entries) {
       focusCurrentFolder();
     });
 
-    const children = childrenByParent.get(id) ?? [];
-    const notes = entriesByFolder.get(id) ?? [];
     if (children.length === 0 && notes.length === 0) {
       row.append(document.createElement('span'), select);
       item.append(row);
