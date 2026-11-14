@@ -85,6 +85,13 @@ input[type="text"] { width: 100%; padding: 10px 16px; background: var(--panel); 
 #rename .actions { margin-top: 16px; }
 .entry-actions { display: flex; flex-wrap: wrap; gap: 6px; }
 #composer { scroll-margin-top: 16px; }
+.folder-bar { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:10px; margin:0 0 12px; }
+.folder-list { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:12px; }
+.folder-bar nav { display:flex; flex-wrap:wrap; gap:6px; align-items:center; overflow-wrap:anywhere; }
+.folder-bar button, .folder-list button { max-width:100%; overflow-wrap:anywhere; }
+#move-destination { width:100%; padding:8px; font:inherit; }
+#folder-dialog .actions, #move-dialog .actions { margin-top:14px; }
+.entry-location { font-size:12px; color:var(--muted); margin:0 0 6px; overflow-wrap:anywhere; }
 </style>
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-0BYFQWWJY9"></script>
 <script>
@@ -102,6 +109,11 @@ input[type="text"] { width: 100%; padding: 10px 16px; background: var(--panel); 
 <main>
   <h1>Text Notepad</h1>
   <p>Save separate text entries in this browser. Duplicate checks ignore spaces, tabs, and line breaks.</p>
+  <div class="folder-bar">
+    <nav id="folder-path" aria-label="Folder path"></nav>
+    <button id="new-folder" type="button">New folder</button>
+  </div>
+  <div id="folders" class="folder-list" aria-label="Subfolders"></div>
   <form id="composer" class="editor">
     <div class="composer-title">
       <label for="entry-title">Title (optional)</label>
@@ -141,6 +153,30 @@ input[type="text"] { width: 100%; padding: 10px 16px; background: var(--panel); 
     </div>
   </form>
 </dialog>
+<dialog id="folder-dialog" aria-labelledby="folder-heading">
+  <form id="folder-form">
+    <h2 id="folder-heading">New folder</h2>
+    <label for="folder-name">Folder name</label>
+    <input id="folder-name" type="text" maxlength="120" required autofocus>
+    <p id="folder-error" role="status"></p>
+    <div class="actions">
+      <button type="button" id="folder-cancel">Cancel</button>
+      <button class="primary">Create folder</button>
+    </div>
+  </form>
+</dialog>
+<dialog id="move-dialog" aria-labelledby="move-heading">
+  <form id="move-form">
+    <h2 id="move-heading">Move entry</h2>
+    <label for="move-destination">Destination</label>
+    <select id="move-destination"></select>
+    <p id="move-error" role="status"></p>
+    <div class="actions">
+      <button type="button" id="move-cancel">Cancel</button>
+      <button class="primary">Move entry</button>
+    </div>
+  </form>
+</dialog>
 <script>
 'use strict';
 
@@ -157,6 +193,15 @@ const composer = document.getElementById('composer');
 const submitEntry = document.getElementById('submit-entry');
 const cancelEdit = document.getElementById('cancel-edit');
 const noteLabel = document.getElementById('note-label');
+const folderKey = 'zegulas.text-notepad.folders.v1';
+const folderDialog = document.getElementById('folder-dialog');
+const folderName = document.getElementById('folder-name');
+const folderError = document.getElementById('folder-error');
+const moveDialog = document.getElementById('move-dialog');
+const moveDestination = document.getElementById('move-destination');
+const moveError = document.getElementById('move-error');
+let activeFolder = null;
+let movingId;
 let editingEntry;
 let editingId;
 let pending;
@@ -172,12 +217,58 @@ function readEntries() {
   return legacy ? [{id: 1, text: legacy}] : [];
 }
 
+function readFolders() {
+  return JSON.parse(localStorage.getItem(folderKey) ?? '[]');
+}
+
+function folderTrail(id, folders) {
+  const trail = [];
+  const byId = new Map(folders.map(folder => [folder.id, folder]));
+  const seen = new Set();
+  while (byId.has(id) && !seen.has(id)) {
+    seen.add(id);
+    const folder = byId.get(id);
+    trail.unshift(folder);
+    id = folder.parentId;
+  }
+  return trail;
+}
+
+function folderPath(id, folders) {
+  return ['Root', ...folderTrail(id, folders).map(folder => folder.name)].join(' / ');
+}
+
+function folderButton(label, id) {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.textContent = label;
+  button.addEventListener('click', () => {
+    activeFolder = id;
+    refresh();
+    document.querySelector('#folder-path [aria-current]')?.focus();
+  });
+  return button;
+}
+
+function renderFolders(folders) {
+  if (activeFolder !== null && !folders.some(folder => folder.id === activeFolder)) activeFolder = null;
+  const path = document.getElementById('folder-path');
+  const crumbs = [folderButton('Root', null)];
+  for (const folder of folderTrail(activeFolder, folders)) {
+    crumbs.push(document.createTextNode(' / '), folderButton(folder.name, folder.id));
+  }
+  crumbs.at(-1).setAttribute('aria-current', 'location');
+  path.replaceChildren(...crumbs);
+  const children = folders.filter(folder => folder.parentId === activeFolder);
+  document.getElementById('folders').replaceChildren(...children.map(folder => folderButton(folder.name, folder.id)));
+}
+
 function report(message, error = false) {
   status.textContent = message;
   status.toggleAttribute('data-error', error);
 }
 
-function entryCard(entry, preview = false) {
+function entryCard(entry, preview = false, folders = []) {
   const card = document.createElement('article');
   card.className = 'entry';
   const title = document.createElement('h3');
@@ -204,21 +295,35 @@ function entryCard(entry, preview = false) {
     edit.addEventListener('click', () => beginEdit(entry));
     const actions = document.createElement('div');
     actions.className = 'entry-actions';
-    actions.append(edit, rename);
+    const move = document.createElement('button');
+    move.type = 'button';
+    move.textContent = 'Move';
+    move.setAttribute('aria-label', 'Move ' + title.textContent);
+    move.addEventListener('click', () => openMove(entry));
+    actions.append(edit, rename, move);
     header.append(actions);
   }
   const content = document.createElement('pre');
   content.textContent = preview && entry.text.length > 400 ? entry.text.slice(0, 400) + '…' : entry.text;
-  card.append(header, content);
+  card.append(header);
+  if (preview) {
+    const location = document.createElement('p');
+    location.className = 'entry-location';
+    location.textContent = folderPath(entry.folderId, folders);
+    card.append(location);
+  }
+  card.append(content);
   return card;
 }
 
-function render(entries) {
+function render(entries, folders = readFolders()) {
+  renderFolders(folders);
+  const visible = entries.filter(entry => (entry.folderId ?? null) === activeFolder);
   const list = document.getElementById('entries');
   const cards = document.createDocumentFragment();
-  for (const entry of [...entries].reverse()) cards.append(entryCard(entry));
+  for (const entry of [...visible].reverse()) cards.append(entryCard(entry));
   list.replaceChildren(cards);
-  document.getElementById('empty').hidden = entries.length > 0;
+  document.getElementById('empty').hidden = visible.length > 0;
 }
 
 function refresh() {
@@ -262,14 +367,14 @@ function clearDraft(message) {
   report(message);
 }
 
-function save(entries, text, title, replaceIds = new Set()) {
+function save(entries, text, title, replaceIds = new Set(), folderId = activeFolder) {
   const nextId = entries.reduce((max, entry) => Math.max(max, entry.id), 0) + 1;
   const next = entries.filter(entry => !replaceIds.has(entry.id));
   if (editingEntry) {
     const index = next.findIndex(entry => entry.id === editingEntry.id);
     next[index] = {...next[index], text, title};
   } else {
-    next.push({id: nextId, text, title});
+    next.push({id: nextId, text, title, folderId});
   }
   try {
     localStorage.setItem(storageKey, JSON.stringify(next));
@@ -306,14 +411,15 @@ composer.addEventListener('submit', event => {
       save(entries, text, title);
       return;
     }
-    pending = {text, title, entries, matches};
+    const folders = readFolders();
+    pending = {text, title, entries, matches, folderId: activeFolder};
     document.getElementById('explanation').textContent = editingEntry
       ? 'Other entries match your edited text when whitespace is ignored.'
       : 'These entries match your new text when whitespace is ignored.';
     document.getElementById('discard').textContent = editingEntry ? 'Discard changes' : 'Discard new';
     document.getElementById('replace').textContent = editingEntry ? 'Keep edited entry only' : 'Keep new only';
     const previews = document.createDocumentFragment();
-    for (const match of matches) previews.append(entryCard(match, true));
+    for (const match of matches) previews.append(entryCard(match, true, folders));
     document.getElementById('matches').replaceChildren(previews);
     dialog.showModal();
   } catch {
@@ -322,7 +428,7 @@ composer.addEventListener('submit', event => {
 });
 
 function resolveMatch(choice) {
-  const {text, title, entries, matches} = pending;
+  const {text, title, entries, matches, folderId} = pending;
   pending = undefined;
   dialog.close();
   if (choice === 'discard') {
@@ -336,7 +442,7 @@ function resolveMatch(choice) {
       return;
     }
     const replaceIds = new Set(choice === 'replace' ? matches.map(entry => entry.id) : []);
-    save(entries, text, title, replaceIds);
+    save(entries, text, title, replaceIds, folderId);
   } catch {
     report('Could not read your saved entries. Your text is still in the input.', true);
   }
@@ -347,7 +453,7 @@ for (const choice of ['discard', 'replace', 'keep']) {
 }
 dialog.addEventListener('cancel', () => { pending = undefined; });
 window.addEventListener('storage', event => {
-  if (event.key === storageKey || event.key === legacyKey || event.key === null) refresh();
+  if (event.key === storageKey || event.key === legacyKey || event.key === folderKey || event.key === null) refresh();
 });
 document.getElementById('rename-cancel').addEventListener('click', () => renameDialog.close());
 document.getElementById('rename-form').addEventListener('submit', event => {
@@ -368,10 +474,80 @@ document.getElementById('rename-form').addEventListener('submit', event => {
     }
     renameDialog.close();
     render(entries);
-    document.querySelectorAll('#entries .rename-entry')[entries.length - 1 - index]?.focus();
+    const visible = entries.filter(entry => (entry.folderId ?? null) === activeFolder).reverse();
+    document.querySelectorAll('#entries .rename-entry')[visible.findIndex(entry => entry.id === editingId)]?.focus();
     report('Title updated.');
   } catch {
     renameError.textContent = 'Could not save the title. Your changes are still here.';
+  }
+});
+document.getElementById('new-folder').addEventListener('click', () => {
+  folderName.value = '';
+  folderError.textContent = '';
+  folderDialog.showModal();
+});
+document.getElementById('folder-cancel').addEventListener('click', () => folderDialog.close());
+document.getElementById('folder-form').addEventListener('submit', event => {
+  event.preventDefault();
+  const name = folderName.value.trim();
+  if (!name) {
+    folderError.textContent = 'Enter a folder name.';
+    return;
+  }
+  try {
+    const folders = readFolders();
+    if (folders.some(folder => folder.parentId === activeFolder && folder.name.toLowerCase() === name.toLowerCase())) {
+      folderError.textContent = 'A folder with that name already exists here.';
+      return;
+    }
+    const folder = {id: crypto.randomUUID(), parentId: activeFolder, name};
+    localStorage.setItem(folderKey, JSON.stringify([...folders, folder]));
+    activeFolder = folder.id;
+    folderDialog.close();
+    refresh();
+    document.querySelector('#folder-path [aria-current]')?.focus();
+    report('Folder created.');
+  } catch {
+    folderError.textContent = 'Could not save this folder.';
+  }
+});
+
+function openMove(entry) {
+  try {
+    const folders = readFolders();
+    moveDestination.replaceChildren(new Option('Root', ''));
+    const choices = folders.map(folder => ({id: folder.id, path: folderPath(folder.id, folders)}));
+    choices.sort((a, b) => a.path.localeCompare(b.path));
+    for (const choice of choices) moveDestination.add(new Option(choice.path, choice.id));
+    moveDestination.value = entry.folderId ?? '';
+    movingId = entry.id;
+    moveError.textContent = '';
+    moveDialog.showModal();
+  } catch {
+    report('Could not open folder destinations.', true);
+  }
+}
+
+document.getElementById('move-cancel').addEventListener('click', () => moveDialog.close());
+document.getElementById('move-form').addEventListener('submit', event => {
+  event.preventDefault();
+  try {
+    const entries = readEntries();
+    const index = entries.findIndex(entry => entry.id === movingId);
+    const folders = readFolders();
+    const folderId = moveDestination.value || null;
+    if (index < 0 || (folderId !== null && !folders.some(folder => folder.id === folderId))) {
+      moveError.textContent = 'The entry or destination is no longer available.';
+      return;
+    }
+    entries[index] = {...entries[index], folderId};
+    localStorage.setItem(storageKey, JSON.stringify(entries));
+    moveDialog.close();
+    render(entries, folders);
+    document.querySelector('#folder-path [aria-current]')?.focus();
+    report('Entry moved to ' + folderPath(folderId, folders) + '.');
+  } catch {
+    moveError.textContent = 'Could not move this entry.';
   }
 });
 refresh();
