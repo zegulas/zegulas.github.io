@@ -103,7 +103,7 @@ main { width: min(100% - 32px, 1220px); }
 .folder-heading h2 { margin: 0; font-size: 16px; }
 .folder-tree, .folder-tree ul { list-style: none; margin: 0; padding: 0; }
 .folder-tree ul { margin-left: 10px; padding-left: 6px; border-left: 1px solid var(--line); }
-.folder-row { display: grid; grid-template-columns: 26px minmax(0, 1fr); align-items: start; margin: 2px 0; border-radius: 6px; }
+.folder-row { display: grid; grid-template-columns: 44px minmax(0, 1fr); align-items: start; margin: 2px 0; border-radius: 6px; }
 .folder-row:has([aria-current]) { background: var(--page); }
 .folder-row button { min-height: 32px; padding: 5px; border: 0; background: transparent; }
 .folder-row button:hover { background: var(--page); text-decoration: underline; }
@@ -120,6 +120,9 @@ main { width: min(100% - 32px, 1220px); }
 .folder-icon { flex: none; font-size: 14px; }
 .sidebar-entry { grid-column:2; }
 .entry[tabindex="-1"] { scroll-margin-top:16px; }
+.folder-controls { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+.folder-row button { min-height: 44px; }
+.folder-row .folder-toggle { width: 44px; font-size: 21px; line-height: 1; }
 </style>
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-0BYFQWWJY9"></script>
 <script>
@@ -142,6 +145,10 @@ main { width: min(100% - 32px, 1220px); }
       <div class="folder-heading">
         <h2 id="folders-title">Folders</h2>
         <button id="new-folder" type="button">New folder</button>
+      </div>
+      <div class="folder-controls">
+        <button type="button" id="expand-folders">Expand all</button>
+        <button type="button" id="collapse-folders">Collapse all</button>
       </div>
       <nav aria-label="Folder navigation"><ul id="folders" class="folder-tree"></ul></nav>
     </aside>
@@ -360,6 +367,7 @@ function renderFolders(folders, entries) {
 
     const toggle = document.createElement('button');
     toggle.type = 'button';
+    toggle.className = 'folder-toggle';
     const list = document.createElement('ul');
     list.id = id === null ? 'folder-children-root' : 'folder-children-' + id;
     toggle.setAttribute('aria-controls', list.id);
@@ -840,6 +848,23 @@ folderEntriesButton.addEventListener('click', () => {
   search.value = '';
   updateEntryList();
 });
+function setAllFoldersExpanded(expanded) {
+  try {
+    const folders = readFolders();
+    const entries = readEntries();
+    expandedFolders.clear();
+    if (expanded) {
+      expandedFolders.add(null);
+      for (const folder of folders) expandedFolders.add(folder.id);
+    }
+    renderFolders(folders, entries);
+  } catch {
+    report('Could not load the folder tree.', true);
+  }
+}
+
+document.getElementById('expand-folders').addEventListener('click', () => setAllFoldersExpanded(true));
+document.getElementById('collapse-folders').addEventListener('click', () => setAllFoldersExpanded(false));
 refresh();
 </script>
 </body>
