@@ -117,43 +117,7 @@ main { width: min(100% - 32px, 1220px); }
 .search-preview { margin: 0 0 10px; }
 .entry mark { background: #ffe36d; color: #211900; }
 .folder-row .folder-name { display:flex; align-items:baseline; gap:7px; }
-.folder-icon {
-  display: inline-block;
-  flex: none;
-  position: relative;
-  width: 15px;
-  height: 11px;
-  border: 1.5px solid currentColor;
-  border-radius: 2px;
-  color: var(--accent);
-}
-.folder-icon::before {
-  content: '';
-  position: absolute;
-  top: -4px;
-  left: -1.5px;
-  width: 7px;
-  height: 4px;
-  border: 1.5px solid currentColor;
-  border-bottom: 0;
-  border-radius: 2px 2px 0 0;
-}
-.folder-icon.document {
-  width: 12px;
-  height: 14px;
-  color: var(--muted);
-}
-.folder-icon.document::before {
-  top: 4px;
-  left: 2px;
-  right: 2px;
-  width: auto;
-  height: 4px;
-  border: 0;
-  border-top: 1px solid currentColor;
-  border-bottom: 1px solid currentColor;
-  border-radius: 0;
-}
+.folder-icon { flex: none; font-size: 14px; }
 .sidebar-entry { grid-column:2; }
 .entry[tabindex="-1"] { scroll-margin-top:16px; }
 </style>
@@ -326,7 +290,8 @@ function focusCurrentFolder() {
 
 function treeLabel(button, icon, name) {
   const symbol = document.createElement('span');
-  symbol.className = icon === 'document' ? 'folder-icon document' : 'folder-icon';
+  symbol.className = 'folder-icon';
+  symbol.textContent = icon;
   symbol.setAttribute('aria-hidden', 'true');
   button.append(symbol, name);
 }
@@ -354,7 +319,7 @@ function renderFolders(folders, entries) {
     const button = document.createElement('button');
     button.type = 'button';
     button.className = 'folder-name sidebar-entry';
-    treeLabel(button, 'document', entry.title || 'Entry ' + entry.id);
+    treeLabel(button, '📄', entry.title || 'Entry ' + entry.id);
     button.addEventListener('click', () => {
       activeFolder = folderId;
       showAllEntries = false;
@@ -373,7 +338,7 @@ function renderFolders(folders, entries) {
     const select = document.createElement('button');
     select.type = 'button';
     select.className = 'folder-name';
-    treeLabel(select, 'folder', name);
+    treeLabel(select, '📁', name);
     if (id === activeFolder) select.setAttribute('aria-current', 'location');
     select.addEventListener('click', () => {
       activeFolder = id;
