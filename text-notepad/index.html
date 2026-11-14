@@ -114,6 +114,8 @@ main { width: min(100% - 32px, 1220px); }
   .workspace { grid-template-columns: minmax(0, 1fr); gap: 12px; }
   .folder-sidebar { position: static; max-height: 35vh; }
 }
+.search-preview { margin: 0 0 10px; }
+.entry mark { background: #ffe36d; color: #211900; }
 </style>
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-0BYFQWWJY9"></script>
 <script>
@@ -368,7 +370,19 @@ function entryTimestamp(label, value) {
   return field;
 }
 
-function entryCard(entry, preview = false, folders = [], compact = false) {
+function highlight(element, value, pattern) {
+  let cursor = 0;
+  for (const match of value.matchAll(pattern)) {
+    element.append(value.slice(cursor, match.index));
+    const mark = document.createElement('mark');
+    mark.textContent = match[0];
+    element.append(mark);
+    cursor = match.index + match[0].length;
+  }
+  element.append(value.slice(cursor));
+}
+
+function entryCard(entry, preview = false, folders = [], compact = false, pattern = null) {
   const card = document.createElement('article');
   card.className = 'entry';
   const title = document.createElement('h3');
@@ -409,13 +423,20 @@ function entryCard(entry, preview = false, folders = [], compact = false) {
     actions.append(edit, rename, move, remove);
     header.append(actions);
   }
+  if (pattern) {
+    const label = title.textContent;
+    title.textContent = '';
+    highlight(title, label, pattern);
+  }
   const content = document.createElement('pre');
   content.textContent = preview && entry.text.length > 400 ? entry.text.slice(0, 400) + '…' : entry.text;
   card.append(header);
   if (preview || compact) {
     const location = document.createElement('p');
     location.className = 'entry-location';
-    location.textContent = folderPath(entry.folderId, folders);
+    const path = folderPath(entry.folderId, folders);
+    if (pattern) highlight(location, path, pattern);
+    else location.textContent = path;
     card.append(location);
   }
   if (!preview) {
@@ -423,6 +444,20 @@ function entryCard(entry, preview = false, folders = [], compact = false) {
     times.className = 'entry-times';
     times.append(entryTimestamp('Created at', entry.createdAt), entryTimestamp('Updated at', entry.updatedAt));
     card.append(times);
+  }
+  if (pattern) {
+    const match = pattern.exec(entry.text);
+    pattern.lastIndex = 0;
+    if (match) {
+      const start = Math.max(0, match.index - 55);
+      const end = Math.min(entry.text.length, match.index + match[0].length + 75);
+      const snippet = document.createElement('pre');
+      snippet.className = 'search-preview';
+      if (start > 0) snippet.append('…');
+      highlight(snippet, entry.text.slice(start, end), pattern);
+      if (end < entry.text.length) snippet.append('…');
+      card.append(snippet);
+    }
   }
   if (compact) {
     const details = document.createElement('details');
@@ -442,19 +477,21 @@ function render(entries, folders = readFolders()) {
 }
 
 function renderEntries(entries, folders) {
-  const query = search.value.trim().toLowerCase();
+  const query = search.value.trim();
+  const literal = query.replace(/[.*+?^$(){}|[\]\\]/g, '\\$&');
+  const pattern = showAllEntries && query ? new RegExp(literal, 'giu') : null;
   const visible = entries.filter(entry => {
     if (!showAllEntries) return (entry.folderId ?? null) === activeFolder;
-    if (!query) return true;
+    if (!pattern) return true;
     const title = entry.title || 'Entry ' + entry.id;
     return [title, entry.text, folderPath(entry.folderId, folders)]
-      .some(value => value.toLowerCase().includes(query));
+      .some(value => !value.matchAll(pattern).next().done);
   });
   allEntriesButton.setAttribute('aria-pressed', String(showAllEntries));
   folderEntriesButton.textContent = folderPath(activeFolder, folders, ' > ');
   folderEntriesButton.setAttribute('aria-pressed', String(!showAllEntries));
   const cards = document.createDocumentFragment();
-  for (const entry of [...visible].reverse()) cards.append(entryCard(entry, false, folders, showAllEntries));
+  for (const entry of [...visible].reverse()) cards.append(entryCard(entry, false, folders, showAllEntries, pattern));
   document.getElementById('entries').replaceChildren(cards);
   document.getElementById('entry-count').textContent = showAllEntries
     ? visible.length + ' of ' + entries.length + ' entries'
