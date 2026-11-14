@@ -486,6 +486,11 @@ function treeLabel(button, icon, name) {
   button.append(symbol, name);
 }
 
+function toggleFolderExpansion(id) {
+  if (expandedFolders.has(id)) expandedFolders.delete(id);
+  else expandedFolders.add(id);
+}
+
 function renderFolders(folders, entries) {
   if (activeFolder !== null && !folders.some(folder => folder.id === activeFolder)) activeFolder = null;
   document.getElementById('composer-location').textContent = folderPath(activeFolder, folders, ' > ');
@@ -536,7 +541,7 @@ function renderFolders(folders, entries) {
     if (id === activeFolder) select.setAttribute('aria-current', 'location');
     select.addEventListener('click', () => {
       activeFolder = id;
-      expandedFolders.add(id);
+      toggleFolderExpansion(id);
       showAllEntries = false;
       search.value = '';
       refresh();
@@ -569,8 +574,7 @@ function renderFolders(folders, entries) {
     }
 
     toggle.addEventListener('click', () => {
-      if (expandedFolders.has(id)) expandedFolders.delete(id);
-      else expandedFolders.add(id);
+      toggleFolderExpansion(id);
       updateExpansion();
     });
     updateExpansion();
