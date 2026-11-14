@@ -105,8 +105,8 @@ input[type="text"] { width: 100%; padding: 10px 16px; background: var(--panel); 
 #entry-count { margin:0; font-size:13px; }
 #folder-entries { max-width: 100%; overflow-wrap: anywhere; text-align: left; }
 .workspace { display: grid; grid-template-columns: min(var(--sidebar-width, 250px), calc(100% - 340px)) 20px minmax(0, 1fr); align-items: start; }
-.folder-resizer { position: sticky; top: 16px; height: 56px; margin-top: 4px; cursor: col-resize; touch-action: none; border-radius: 6px; display: grid; place-items: center; }
-.folder-resizer::after { content: ""; width: 4px; height: 32px; border-radius: 4px; background: var(--muted); }
+.folder-resizer { position: sticky; top: 16px; height: var(--folder-sidebar-height, 56px); cursor: col-resize; touch-action: none; border-radius: 6px; display: grid; place-items: center; }
+.folder-resizer::after { content: ""; width: 4px; height: 100%; border-radius: 4px; background: var(--muted); }
 .folder-resizer:hover::after, .folder-resizer:focus-visible::after, .workspace.resizing .folder-resizer::after { background: var(--accent); }
 .workspace.resizing { cursor: col-resize; user-select: none; }
 .folder-sidebar { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 12px; position: sticky; top: 16px; max-height: calc(100vh - 32px); overflow: auto; }
@@ -313,6 +313,11 @@ input[type="text"] { width: 100%; padding: 10px 16px; background: var(--panel); 
 const folderResizer = document.querySelector('.folder-resizer');
 const workspace = folderResizer.parentElement;
 const folderSidebar = document.getElementById('folder-sidebar');
+function updateFolderResizerHeight() {
+  folderResizer.style.setProperty('--folder-sidebar-height', `${folderSidebar.offsetHeight}px`);
+}
+updateFolderResizerHeight();
+new ResizeObserver(updateFolderResizerHeight).observe(folderSidebar, {box: 'border-box'});
 const minimumSidebarWidth = 200;
 let dragStart;
 
