@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Text Notepad</title>
+<meta name="description" content="A browser notepad that autosaves your text and flags duplicate pastes.">
+<style>
+:root {
+  color-scheme: light dark;
+  --page: #f5f6f8;
+  --panel: #fff;
+  --ink: #191c23;
+  --muted: #5e6675;
+  --line: #dce0e7;
+  --accent: #2459cf;
+  --button-text: white;
+  --warning: #9b432b;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --page: #17191e;
+    --panel: #202329;
+    --ink: #f1f3f8;
+    --muted: #adb5c4;
+    --line: #383e49;
+    --accent: #9cb9ff;
+    --button-text: #13254e;
+    --warning: #ffc0a9;
+  }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--page); color: var(--ink); font: 15px/1.55 system-ui, sans-serif; }
+main { width: min(100% - 32px, 960px); margin: clamp(24px, 7vh, 72px) auto; }
+h1 { font-size: clamp(36px, 6vw, 56px); line-height: 1.05; letter-spacing: -.055em; margin: 0 0 12px; }
+p { margin: 0 0 20px; color: var(--muted); }
+.editor { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+label, footer { display: block; padding: 10px 16px; font-size: 13px; }
+label { font-weight: 650; border-bottom: 1px solid var(--line); }
+textarea {
+  display: block;
+  width: 100%;
+  height: 57vh;
+  min-height: 220px;
+  padding: 16px;
+  border: 0;
+  resize: vertical;
+  background: var(--panel);
+  color: var(--ink);
+  font: 14px/1.65 ui-monospace, Menlo, Consolas, monospace;
+}
+textarea::placeholder { color: var(--muted); }
+footer { border-top: 1px solid var(--line); color: var(--muted); }
+footer[data-error] { color: var(--warning); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+textarea:focus-visible { outline-offset: -3px; }
+dialog {
+  width: min(100% - 32px, 530px);
+  padding: 24px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--panel);
+  color: var(--ink);
+  box-shadow: 0 20px 80px #0004;
+}
+dialog::backdrop { background: #151a2580; }
+h2 { margin: 0 0 8px; font-size: 22px; letter-spacing: -.03em; }
+#matches { max-height: 32vh; overflow: auto; overflow-wrap: anywhere; }
+.actions { display: flex; flex-wrap: wrap; gap: 8px; }
+button { border: 1px solid var(--line); border-radius: 8px; padding: 8px 12px; background: var(--panel); color: var(--ink); font: inherit; font-size: 13px; cursor: pointer; }
+button:hover { border-color: var(--accent); }
+.primary { background: var(--accent); color: var(--button-text); border-color: var(--accent); font-weight: 650; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Text Notepad</h1>
+  <p>Paste or type in one note. Your browser saves it automatically.</p>
+  <div class="editor">
+    <label for="note">Your note</label>
+    <textarea id="note" spellcheck="false" placeholder="Paste or type here…"></textarea>
+    <footer id="status" role="status"></footer>
+  </div>
+</main>
+<dialog id="duplicate" aria-labelledby="duplicate-title" aria-describedby="matches">
+  <h2 id="duplicate-title">This text is already in your note</h2>
+  <p id="matches"></p>
+  <div class="actions">
+    <button type="button" id="discard" autofocus>Discard new paste</button>
+    <button type="button" id="replace">Keep new paste only</button>
+    <button type="button" id="keep" class="primary">Keep all copies</button>
+  </div>
+</dialog>
+<script>
+'use strict';
+
+const storageKey = 'zegulas.text-notepad.note.v1';
+const note = document.getElementById('note');
+const status = document.getElementById('status');
+const dialog = document.getElementById('duplicate');
+let pendingPaste;
+
+function report(message, error = false) {
+  status.textContent = message;
+  status.toggleAttribute('data-error', error);
+}
+
+function save() {
+  try {
+    localStorage.setItem(storageKey, note.value);
+    report('Saved in this browser');
+  } catch {
+    report('Could not save in this browser. Copy your note before closing this page.', true);
+  }
+}
+
+try {
+  note.value = localStorage.getItem(storageKey) ?? '';
+  report(note.value ? 'Saved in this browser' : 'Autosave is on');
+} catch {
+  report('Browser storage is unavailable. Copy your note before closing this page.', true);
+}
+
+note.addEventListener('input', save);
+
+function findMatches(source, pasted) {
+  const matches = [];
+  let line = 1;
+  let scanned = 0;
+  const lineSpan = pasted.replace(/\n$/, '').split('\n').length - 1;
+  for (let start = source.indexOf(pasted); start !== -1; start = source.indexOf(pasted, start + pasted.length)) {
+    while (scanned < start) {
+      if (source[scanned++] === '\n') line++;
+    }
+    matches.push({start, end: start + pasted.length, firstLine: line, lastLine: line + lineSpan});
+  }
+  return matches;
+}
+
+// Remove the earlier matches and any selected text, then insert at the original caret.
+function replaceCopies(source, pasted, start, end, matches) {
+  const ranges = [...matches, {start, end}].sort((a, b) => a.start - b.start);
+  let remaining = '';
+  let cursor = 0;
+  let insertion = start;
+  for (const range of ranges) {
+    const from = Math.max(cursor, range.start);
+    if (range.end <= from) continue;
+    remaining += source.slice(cursor, from);
+    insertion -= Math.max(0, Math.min(start, range.end) - from);
+    cursor = range.end;
+  }
+  remaining += source.slice(cursor);
+  return {
+    value: remaining.slice(0, insertion) + pasted + remaining.slice(insertion),
+    caret: insertion + pasted.length
+  };
+}
+
+note.addEventListener('paste', event => {
+  const pasted = event.clipboardData?.getData('text/plain').replace(/\r\n?/g, '\n');
+  if (!pasted?.trim()) return;
+  const source = note.value;
+  const matches = findMatches(source, pasted);
+  if (!matches.length) return;
+
+  event.preventDefault();
+  pendingPaste = {source, pasted, matches, start: note.selectionStart, end: note.selectionEnd};
+  const locations = matches.slice(0, 12).map(({firstLine, lastLine}) =>
+    firstLine === lastLine ? 'line ' + firstLine : 'lines ' + firstLine + '–' + lastLine
+  );
+  if (matches.length > locations.length) locations.push('and ' + (matches.length - locations.length) + ' more');
+  document.getElementById('matches').textContent = 'Found at ' + locations.join(', ') + '. Keeping only the new paste removes the earlier matches.';
+  dialog.showModal();
+});
+
+function finishPaste(choice) {
+  const {source, pasted, start, end, matches} = pendingPaste;
+  pendingPaste = undefined;
+  dialog.close();
+  note.focus();
+  if (choice === 'discard') return;
+  if (note.value !== source) {
+    report('The note changed while the dialog was open. Paste again to check for matches.', true);
+    return;
+  }
+  if (choice === 'replace') {
+    const {value, caret} = replaceCopies(source, pasted, start, end, matches);
+    note.value = value;
+    note.setSelectionRange(caret, caret);
+  } else {
+    let insertAt = start;
+    for (const match of matches) {
+      if ((start < match.end && end > match.start) || (start === end && start > match.start && start < match.end)) insertAt = Math.max(insertAt, end, match.end);
+    }
+    note.setRangeText(pasted, insertAt, Math.max(insertAt, end), 'end');
+  }
+  save();
+}
+
+for (const choice of ['discard', 'replace', 'keep']) {
+  document.getElementById(choice).addEventListener('click', () => finishPaste(choice));
+}
+dialog.addEventListener('cancel', () => { pendingPaste = undefined; });
+window.addEventListener('storage', event => {
+  if (event.key !== storageKey && event.key !== null) return;
+  note.value = event.newValue ?? '';
+  report('Note updated from another tab');
+});
+</script>
+</body>
+</html>
