@@ -103,6 +103,7 @@ input[type="text"] { width: 100%; padding: 10px 16px; background: var(--panel); 
 #folder-path button:hover { text-decoration: underline; }
 #folder-path [aria-current] { color: var(--ink); font-weight: 650; }
 .folder-separator { color: var(--muted); }
+#folder-entries { max-width: 100%; overflow-wrap: anywhere; text-align: left; }
 </style>
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-0BYFQWWJY9"></script>
 <script>
@@ -139,8 +140,8 @@ input[type="text"] { width: 100%; padding: 10px 16px; background: var(--panel); 
   <section class="saved" aria-labelledby="saved-title">
     <h2 id="saved-title">Saved entries</h2>
     <div class="list-controls">
-      <button type="button" id="folder-entries" aria-pressed="true">This folder</button>
-      <button type="button" id="all-entries" aria-pressed="false">All entries</button>
+      <button type="button" id="all-entries" aria-pressed="true">All entries</button>
+      <button type="button" id="folder-entries" aria-pressed="false">Root</button>
       <input type="search" id="entry-search" aria-label="Search all entries" placeholder="Search title, text, or folder">
     </div>
     <p id="entry-count" role="status" aria-atomic="true"></p>
@@ -218,7 +219,7 @@ const moveDialog = document.getElementById('move-dialog');
 const moveDestination = document.getElementById('move-destination');
 const moveError = document.getElementById('move-error');
 let activeFolder = null;
-let showAllEntries = false;
+let showAllEntries = true;
 const search = document.getElementById('entry-search');
 const allEntriesButton = document.getElementById('all-entries');
 const folderEntriesButton = document.getElementById('folder-entries');
@@ -255,8 +256,8 @@ function folderTrail(id, folders) {
   return trail;
 }
 
-function folderPath(id, folders) {
-  return ['Root', ...folderTrail(id, folders).map(folder => folder.name)].join(' / ');
+function folderPath(id, folders, separator = ' / ') {
+  return ['Root', ...folderTrail(id, folders).map(folder => folder.name)].join(separator);
 }
 
 function folderButton(label, id) {
@@ -396,6 +397,7 @@ function renderEntries(entries, folders) {
       .some(value => value.toLowerCase().includes(query));
   });
   allEntriesButton.setAttribute('aria-pressed', String(showAllEntries));
+  folderEntriesButton.textContent = folderPath(activeFolder, folders, ' > ');
   folderEntriesButton.setAttribute('aria-pressed', String(!showAllEntries));
   const cards = document.createDocumentFragment();
   for (const entry of [...visible].reverse()) cards.append(entryCard(entry, false, folders, showAllEntries));
