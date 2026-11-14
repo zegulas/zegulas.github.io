@@ -586,7 +586,10 @@ function beginEdit(entry) {
 }
 
 function revealEditor() {
-  entryTitle.focus({preventScroll: true});
+  note.focus({preventScroll: true});
+  const end = note.value.length;
+  note.setSelectionRange(end, end);
+  note.scrollTop = note.scrollHeight;
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   entryTitle.scrollIntoView({block: 'center', behavior: reducedMotion ? 'instant' : 'smooth'});
 }
