@@ -34,6 +34,8 @@ applyNotepadTheme();
   --folder-orange: #a34500;
   --folder-green: #137044;
   --folder-magenta: #a32b72;
+  --folder-gold: #786000;
+  --folder-teal: #006c79;
 }
 :root[data-theme="dark"] {
   color-scheme: dark;
@@ -49,6 +51,8 @@ applyNotepadTheme();
   --folder-orange: #ffb365;
   --folder-green: #77daa1;
   --folder-magenta: #f29ace;
+  --folder-gold: #f1d26b;
+  --folder-teal: #6edce8;
 }
 * { box-sizing: border-box; }
 body { margin: 0; background: var(--page); color: var(--ink); font: 15px/1.55 system-ui, sans-serif; }
@@ -164,6 +168,10 @@ input[type="text"] { width: 100%; padding: 10px 16px; background: var(--panel); 
 #folder-tint-green feFlood { flood-color: var(--folder-green); }
 .folder-tree [data-accent="magenta"] { --folder-accent: var(--folder-magenta); --folder-icon-filter: url(#folder-tint-magenta); }
 #folder-tint-magenta feFlood { flood-color: var(--folder-magenta); }
+.folder-tree [data-accent="gold"] { --folder-accent: var(--folder-gold); --folder-icon-filter: url(#folder-tint-gold); }
+#folder-tint-gold feFlood { flood-color: var(--folder-gold); }
+.folder-tree [data-accent="teal"] { --folder-accent: var(--folder-teal); --folder-icon-filter: url(#folder-tint-teal); }
+#folder-tint-teal feFlood { flood-color: var(--folder-teal); }
 .folder-tree [data-accent] > .folder-row > .folder-name { color: var(--folder-accent); }
 .folder-row { display: grid; grid-template-columns: 44px minmax(0, 1fr); align-items: stretch; border-radius: 6px; }
 .folder-row:has([aria-current]) { background: var(--page); }
@@ -215,6 +223,8 @@ input[type="text"] { width: 100%; padding: 10px 16px; background: var(--panel); 
     <filter id="folder-tint-orange"><feFlood/><feComposite in2="SourceAlpha" operator="in"/></filter>
     <filter id="folder-tint-green"><feFlood/><feComposite in2="SourceAlpha" operator="in"/></filter>
     <filter id="folder-tint-magenta"><feFlood/><feComposite in2="SourceAlpha" operator="in"/></filter>
+    <filter id="folder-tint-gold"><feFlood/><feComposite in2="SourceAlpha" operator="in"/></filter>
+    <filter id="folder-tint-teal"><feFlood/><feComposite in2="SourceAlpha" operator="in"/></filter>
   </defs>
 </svg>
 <main>
@@ -593,11 +603,11 @@ function renderFolders(folders, entries) {
     return item;
   }
 
-  const folderAccents = ['blue', 'orange', 'green', 'magenta'];
+  const folderAccents = ['blue', 'orange', 'green', 'magenta', 'teal', 'gold'];
 
-  function branch(id, name, depth) {
+  function branch(id, name, accent) {
     const item = document.createElement('li');
-    if (depth >= 0) item.dataset.accent = folderAccents[depth % folderAccents.length];
+    if (accent) item.dataset.accent = accent;
     const row = document.createElement('div');
     row.className = 'folder-row';
     const select = document.createElement('button');
@@ -632,7 +642,10 @@ function renderFolders(folders, entries) {
     const list = document.createElement('ul');
     list.id = id === null ? 'folder-children-root' : 'folder-children-' + id;
     toggle.setAttribute('aria-controls', list.id);
-    for (const child of children) list.append(branch(child.id, child.name, depth + 1));
+    const childAccents = folderAccents.filter(color => color !== accent);
+    children.forEach((child, index) => {
+      list.append(branch(child.id, child.name, childAccents[index % childAccents.length]));
+    });
     for (const entry of notes) list.append(entryBranch(entry, id));
 
     function updateExpansion() {
@@ -653,7 +666,7 @@ function renderFolders(folders, entries) {
     return item;
   }
 
-  document.getElementById('folders').replaceChildren(branch(null, 'Root', -1));
+  document.getElementById('folders').replaceChildren(branch(null, 'Root', null));
 }
 
 function report(message, error = false) {
