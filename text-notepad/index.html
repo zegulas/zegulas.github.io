@@ -96,7 +96,7 @@ input[type="text"] { width: 100%; padding: 10px 16px; background: var(--panel); 
 .entry details pre { margin-top:8px; }
 #entry-count { margin:0; font-size:13px; }
 #folder-entries { max-width: 100%; overflow-wrap: anywhere; text-align: left; }
-.workspace { display: grid; grid-template-columns: minmax(200px, 250px) minmax(0, 1fr); gap: 20px; align-items: start; }
+.workspace { display: grid; grid-template-columns: clamp(250px, 38vw, 500px) minmax(0, 1fr); gap: 20px; align-items: start; }
 .folder-sidebar { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 12px; position: sticky; top: 16px; max-height: calc(100vh - 32px); overflow: auto; }
 .folder-heading { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 10px; }
 .folder-heading h2 { margin: 0; font-size: 16px; }
