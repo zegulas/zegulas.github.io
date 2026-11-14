@@ -92,6 +92,7 @@ input[type="text"] { width: 100%; padding: 10px 16px; background: var(--panel); 
 #move-destination { width:100%; padding:8px; font:inherit; }
 #folder-dialog .actions, #move-dialog .actions { margin-top:14px; }
 .entry-location { font-size:12px; color:var(--muted); margin:0 0 6px; overflow-wrap:anywhere; }
+.entry-times { display:flex; flex-wrap:wrap; column-gap:18px; row-gap:3px; margin:0 0 8px; color:var(--muted); font-size:12px; font-variant-numeric:tabular-nums; }
 </style>
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-0BYFQWWJY9"></script>
 <script>
@@ -268,6 +269,24 @@ function report(message, error = false) {
   status.toggleAttribute('data-error', error);
 }
 
+function entryTimestamp(label, value) {
+  const field = document.createElement('span');
+  field.textContent = label + ' ';
+  const date = new Date(value ?? NaN);
+  if (Number.isNaN(date.getTime())) {
+    field.append('Unknown');
+    return field;
+  }
+  const pad = number => String(number).padStart(2, '0');
+  const day = [String(date.getFullYear()).padStart(4, '0'), pad(date.getMonth() + 1), pad(date.getDate())].join('-');
+  const clock = [pad(date.getHours()), pad(date.getMinutes()), pad(date.getSeconds())].join(':');
+  const time = document.createElement('time');
+  time.dateTime = value;
+  time.textContent = day + ' ' + clock;
+  field.append(time);
+  return field;
+}
+
 function entryCard(entry, preview = false, folders = []) {
   const card = document.createElement('article');
   card.className = 'entry';
@@ -311,6 +330,12 @@ function entryCard(entry, preview = false, folders = []) {
     location.className = 'entry-location';
     location.textContent = folderPath(entry.folderId, folders);
     card.append(location);
+  }
+  if (!preview) {
+    const times = document.createElement('p');
+    times.className = 'entry-times';
+    times.append(entryTimestamp('Created at', entry.createdAt), entryTimestamp('Updated at', entry.updatedAt));
+    card.append(times);
   }
   card.append(content);
   return card;
@@ -370,11 +395,15 @@ function clearDraft(message) {
 function save(entries, text, title, replaceIds = new Set(), folderId = activeFolder) {
   const nextId = entries.reduce((max, entry) => Math.max(max, entry.id), 0) + 1;
   const next = entries.filter(entry => !replaceIds.has(entry.id));
+  const now = new Date().toISOString();
   if (editingEntry) {
     const index = next.findIndex(entry => entry.id === editingEntry.id);
-    next[index] = {...next[index], text, title};
+    const previous = next[index];
+    if (previous.text !== text || (previous.title ?? '') !== title) {
+      next[index] = {...previous, text, title, updatedAt: now};
+    }
   } else {
-    next.push({id: nextId, text, title, folderId});
+    next.push({id: nextId, text, title, folderId, createdAt: now, updatedAt: now});
   }
   try {
     localStorage.setItem(storageKey, JSON.stringify(next));
@@ -466,7 +495,10 @@ document.getElementById('rename-form').addEventListener('submit', event => {
       return;
     }
     const previous = entries[index];
-    entries[index] = {...previous, title: renameTitle.value.trim()};
+    const title = renameTitle.value.trim();
+    if ((previous.title ?? '') !== title) {
+      entries[index] = {...previous, title, updatedAt: new Date().toISOString()};
+    }
     localStorage.setItem(storageKey, JSON.stringify(entries));
     if (editingEntry?.id === editingId && editingEntry.title === previous.title && editingEntry.text === previous.text) {
       if (entryTitle.value === (previous.title ?? '')) entryTitle.value = entries[index].title;
@@ -540,7 +572,9 @@ document.getElementById('move-form').addEventListener('submit', event => {
       moveError.textContent = 'The entry or destination is no longer available.';
       return;
     }
-    entries[index] = {...entries[index], folderId};
+    if ((entries[index].folderId ?? null) !== folderId) {
+      entries[index] = {...entries[index], folderId, updatedAt: new Date().toISOString()};
+    }
     localStorage.setItem(storageKey, JSON.stringify(entries));
     moveDialog.close();
     render(entries, folders);
