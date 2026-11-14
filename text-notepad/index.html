@@ -338,7 +338,12 @@ function entryCard(entry, preview = false, folders = [], compact = false) {
     move.textContent = 'Move';
     move.setAttribute('aria-label', 'Move ' + title.textContent);
     move.addEventListener('click', () => openMove(entry));
-    actions.append(edit, rename, move);
+    const remove = document.createElement('button');
+    remove.type = 'button';
+    remove.textContent = 'Delete';
+    remove.setAttribute('aria-label', 'Delete ' + title.textContent);
+    remove.addEventListener('click', () => deleteEntry(entry));
+    actions.append(edit, rename, move, remove);
     header.append(actions);
   }
   const content = document.createElement('pre');
@@ -425,11 +430,15 @@ function beginEdit(entry) {
   report('Editing ' + (entry.title || 'Entry ' + entry.id) + '.');
 }
 
-function clearDraft(message) {
+function resetComposerMode() {
   editingEntry = undefined;
   noteLabel.textContent = 'New entry';
   submitEntry.textContent = 'Add entry';
   cancelEdit.hidden = true;
+}
+
+function clearDraft(message) {
+  resetComposerMode();
   note.value = '';
   entryTitle.value = '';
   note.focus();
@@ -586,6 +595,32 @@ document.getElementById('folder-form').addEventListener('submit', event => {
     folderError.textContent = 'Could not save this folder.';
   }
 });
+
+function deleteEntry(entry) {
+  const name = entry.title || 'Entry ' + entry.id;
+  if (!window.confirm('Delete “' + name + '”? This cannot be undone.')) return;
+
+  try {
+    const entries = readEntries();
+    const current = entries.find(item => item.id === entry.id);
+    if (JSON.stringify(current) !== JSON.stringify(entry)) {
+      render(entries);
+      report('The entry changed. Review it before deleting.', true);
+      return;
+    }
+    const folders = readFolders();
+    const remaining = entries.filter(item => item.id !== entry.id);
+    localStorage.setItem(storageKey, JSON.stringify(remaining));
+    const wasEditing = editingEntry?.id === entry.id;
+    if (wasEditing) resetComposerMode();
+    render(remaining, folders);
+    const focusTarget = wasEditing ? note : showAllEntries ? search : folderEntriesButton;
+    focusTarget.focus();
+    report(wasEditing ? 'Entry deleted. Your draft is still in the editor.' : 'Entry deleted.');
+  } catch {
+    report('Could not delete this entry.', true);
+  }
+}
 
 function openMove(entry) {
   try {
