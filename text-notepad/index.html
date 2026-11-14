@@ -114,23 +114,37 @@ input[type="text"] { width: 100%; padding: 10px 16px; background: var(--panel); 
 .folder-heading h2 { margin: 0; font-size: 16px; }
 .folder-tree, .folder-tree ul { list-style: none; margin: 0; padding: 0; }
 .folder-tree ul {
+  --branch-guide: var(--folder-accent, var(--muted));
+  --branch-guide: color-mix(in srgb, var(--folder-accent, var(--muted)) 75%, var(--panel));
   margin-left: 10px;
-  padding-left: 6px;
-  border-left: 1px solid var(--line);
-  border-left-color: color-mix(in srgb, var(--folder-accent, var(--line)) 60%, var(--panel));
+  padding-left: 12px;
 }
+.folder-tree ul > li { position: relative; }
+.folder-tree ul > li::before,
+.folder-tree ul > li::after {
+  content: "";
+  position: absolute;
+  left: -12px;
+  pointer-events: none;
+}
+.folder-tree ul > li::before {
+  top: 0;
+  bottom: 0;
+  border-left: 2px solid var(--branch-guide);
+}
+.folder-tree ul > li:last-child::before { bottom: auto; height: 16px; }
+.folder-tree ul > li::after {
+  top: 14px;
+  width: 12px;
+  border-top: 2px solid var(--branch-guide);
+}
+.folder-tree ul > .folder-row::after,
+.folder-tree ul > li:has(> .folder-row > span:first-child)::after { width: 52px; }
 .folder-tree [data-accent="blue"] { --folder-accent: var(--folder-blue); }
 .folder-tree [data-accent="teal"] { --folder-accent: var(--folder-teal); }
 .folder-tree [data-accent="violet"] { --folder-accent: var(--folder-violet); }
 .folder-tree [data-accent="amber"] { --folder-accent: var(--folder-amber); }
-.folder-icon.folder-symbol {
-  align-self: flex-start;
-  margin-top: .25em;
-  width: 16px;
-  height: 16px;
-  background-color: var(--folder-accent, var(--muted));
-  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M3 6a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z' fill='none' stroke='black' stroke-width='2' stroke-linejoin='round'/%3E%3C/svg%3E") center / contain no-repeat;
-}
+.folder-tree [data-accent] > .folder-row > .folder-name { color: var(--folder-accent); }
 .folder-row { display: grid; grid-template-columns: 44px minmax(0, 1fr); align-items: stretch; border-radius: 6px; }
 .folder-row:has([aria-current]) { background: var(--page); }
 .folder-row button { min-height: 30px; padding: 3px 5px; border: 0; background: transparent; }
@@ -466,7 +480,7 @@ function focusCurrentFolder() {
 
 function treeLabel(button, icon, name) {
   const symbol = document.createElement('span');
-  symbol.className = icon ? 'folder-icon' : 'folder-icon folder-symbol';
+  symbol.className = 'folder-icon';
   symbol.textContent = icon;
   symbol.setAttribute('aria-hidden', 'true');
   button.append(symbol, name);
@@ -518,7 +532,7 @@ function renderFolders(folders, entries) {
     const select = document.createElement('button');
     select.type = 'button';
     select.className = 'folder-name';
-    treeLabel(select, '', name);
+    treeLabel(select, '📁', name);
     if (id === activeFolder) select.setAttribute('aria-current', 'location');
     select.addEventListener('click', () => {
       activeFolder = id;
