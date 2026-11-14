@@ -83,6 +83,8 @@ input[type="text"] { width: 100%; padding: 10px 16px; background: var(--panel); 
 .composer-title label, #rename label { border: 0; padding: 0 0 6px; }
 .entry-header { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 6px; overflow-wrap: anywhere; }
 #rename .actions { margin-top: 16px; }
+.entry-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+#composer { scroll-margin-top: 16px; }
 </style>
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-0BYFQWWJY9"></script>
 <script>
@@ -105,9 +107,10 @@ input[type="text"] { width: 100%; padding: 10px 16px; background: var(--panel); 
       <label for="entry-title">Title (optional)</label>
       <input type="text" id="entry-title" maxlength="120" placeholder="Give this entry a name">
     </div>
-    <label for="note">New entry</label>
+    <label id="note-label" for="note">New entry</label>
     <textarea id="note" spellcheck="false" placeholder="Paste or type text here…" required></textarea>
-    <div class="composer-actions"><button class="primary">Add entry</button></div>
+    <div class="composer-actions"><button id="submit-entry" class="primary">Add entry</button>
+      <button type="button" id="cancel-edit" hidden>Cancel edit</button></div>
     <footer id="status" role="status"></footer>
   </form>
   <section class="saved" aria-labelledby="saved-title">
@@ -150,6 +153,11 @@ const entryTitle = document.getElementById('entry-title');
 const renameDialog = document.getElementById('rename');
 const renameTitle = document.getElementById('rename-title');
 const renameError = document.getElementById('rename-error');
+const composer = document.getElementById('composer');
+const submitEntry = document.getElementById('submit-entry');
+const cancelEdit = document.getElementById('cancel-edit');
+const noteLabel = document.getElementById('note-label');
+let editingEntry;
 let editingId;
 let pending;
 
@@ -188,7 +196,16 @@ function entryCard(entry, preview = false) {
       renameError.textContent = '';
       renameDialog.showModal();
     });
-    header.append(rename);
+    rename.className = 'rename-entry';
+    const edit = document.createElement('button');
+    edit.type = 'button';
+    edit.textContent = 'Edit';
+    edit.setAttribute('aria-label', 'Edit ' + title.textContent);
+    edit.addEventListener('click', () => beginEdit(entry));
+    const actions = document.createElement('div');
+    actions.className = 'entry-actions';
+    actions.append(edit, rename);
+    header.append(actions);
   }
   const content = document.createElement('pre');
   content.textContent = preview && entry.text.length > 400 ? entry.text.slice(0, 400) + '…' : entry.text;
@@ -213,7 +230,32 @@ function refresh() {
   }
 }
 
+function beginEdit(entry) {
+  if (editingEntry?.id === entry.id) {
+    note.focus();
+    return;
+  }
+  const hasDraft = note.value !== (editingEntry?.text ?? '') ||
+    entryTitle.value !== (editingEntry?.title ?? '');
+  if (hasDraft && !window.confirm('Discard the unsaved text in the editor?')) return;
+
+  editingEntry = entry;
+  note.value = entry.text;
+  entryTitle.value = entry.title ?? '';
+  noteLabel.textContent = 'Edit entry';
+  submitEntry.textContent = 'Save changes';
+  cancelEdit.hidden = false;
+  note.focus({preventScroll: true});
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  composer.scrollIntoView({block: 'start', behavior: reducedMotion ? 'instant' : 'smooth'});
+  report('Editing ' + (entry.title || 'Entry ' + entry.id) + '.');
+}
+
 function clearDraft(message) {
+  editingEntry = undefined;
+  noteLabel.textContent = 'New entry';
+  submitEntry.textContent = 'Add entry';
+  cancelEdit.hidden = true;
   note.value = '';
   entryTitle.value = '';
   note.focus();
@@ -223,7 +265,12 @@ function clearDraft(message) {
 function save(entries, text, title, replaceIds = new Set()) {
   const nextId = entries.reduce((max, entry) => Math.max(max, entry.id), 0) + 1;
   const next = entries.filter(entry => !replaceIds.has(entry.id));
-  next.push({id: nextId, text, title});
+  if (editingEntry) {
+    const index = next.findIndex(entry => entry.id === editingEntry.id);
+    next[index] = {...next[index], text, title};
+  } else {
+    next.push({id: nextId, text, title});
+  }
   try {
     localStorage.setItem(storageKey, JSON.stringify(next));
   } catch {
@@ -231,27 +278,40 @@ function save(entries, text, title, replaceIds = new Set()) {
     return;
   }
   render(next);
-  clearDraft('Entry ' + nextId + ' saved.');
+  clearDraft(editingEntry ? 'Changes saved.' : 'Entry ' + nextId + ' saved.');
 }
 
-document.getElementById('composer').addEventListener('submit', event => {
+cancelEdit.addEventListener('click', () => clearDraft('Edit canceled.'));
+composer.addEventListener('submit', event => {
   event.preventDefault();
   const text = note.value;
   const title = entryTitle.value.trim();
   const key = comparisonText(text);
   if (!key) {
-    report('Enter some text before adding an entry.', true);
+    report('Enter some text before saving the entry.', true);
     return;
   }
 
   try {
     const entries = readEntries();
-    const matches = entries.filter(entry => comparisonText(entry.text) === key);
+    if (editingEntry) {
+      const current = entries.find(entry => entry.id === editingEntry.id);
+      if (!current || current.text !== editingEntry.text || current.title !== editingEntry.title) {
+        report('The saved entry changed. Copy your draft before reopening the entry.', true);
+        return;
+      }
+    }
+    const matches = entries.filter(entry => entry.id !== editingEntry?.id && comparisonText(entry.text) === key);
     if (!matches.length) {
       save(entries, text, title);
       return;
     }
     pending = {text, title, entries, matches};
+    document.getElementById('explanation').textContent = editingEntry
+      ? 'Other entries match your edited text when whitespace is ignored.'
+      : 'These entries match your new text when whitespace is ignored.';
+    document.getElementById('discard').textContent = editingEntry ? 'Discard changes' : 'Discard new';
+    document.getElementById('replace').textContent = editingEntry ? 'Keep edited entry only' : 'Keep new only';
     const previews = document.createDocumentFragment();
     for (const match of matches) previews.append(entryCard(match, true));
     document.getElementById('matches').replaceChildren(previews);
@@ -266,13 +326,13 @@ function resolveMatch(choice) {
   pending = undefined;
   dialog.close();
   if (choice === 'discard') {
-    clearDraft('New entry discarded.');
+    clearDraft(editingEntry ? 'Changes discarded.' : 'New entry discarded.');
     return;
   }
   try {
     if (JSON.stringify(readEntries()) !== JSON.stringify(entries)) {
       refresh();
-      report('Saved entries changed in another tab. Select Add entry to check again.', true);
+      report('Saved entries changed in another tab. Submit again to check for matches.', true);
       return;
     }
     const replaceIds = new Set(choice === 'replace' ? matches.map(entry => entry.id) : []);
@@ -299,11 +359,16 @@ document.getElementById('rename-form').addEventListener('submit', event => {
       renameError.textContent = 'This entry is no longer available.';
       return;
     }
-    entries[index] = {...entries[index], title: renameTitle.value.trim()};
+    const previous = entries[index];
+    entries[index] = {...previous, title: renameTitle.value.trim()};
     localStorage.setItem(storageKey, JSON.stringify(entries));
+    if (editingEntry?.id === editingId && editingEntry.title === previous.title && editingEntry.text === previous.text) {
+      if (entryTitle.value === (previous.title ?? '')) entryTitle.value = entries[index].title;
+      editingEntry = entries[index];
+    }
     renameDialog.close();
     render(entries);
-    document.querySelectorAll('#entries button')[entries.length - 1 - index]?.focus();
+    document.querySelectorAll('#entries .rename-entry')[entries.length - 1 - index]?.focus();
     report('Title updated.');
   } catch {
     renameError.textContent = 'Could not save the title. Your changes are still here.';
