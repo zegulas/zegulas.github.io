@@ -85,10 +85,6 @@ input[type="text"] { width: 100%; padding: 10px 16px; background: var(--panel); 
 #rename .actions { margin-top: 16px; }
 .entry-actions { display: flex; flex-wrap: wrap; gap: 6px; }
 #composer { scroll-margin-top: 16px; }
-.folder-bar { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:10px; margin:0 0 12px; }
-.folder-list { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:12px; }
-.folder-bar nav { display:flex; flex-wrap:wrap; gap:6px; align-items:center; overflow-wrap:anywhere; }
-.folder-bar button, .folder-list button { max-width:100%; overflow-wrap:anywhere; }
 #move-destination { width:100%; padding:8px; font:inherit; }
 #folder-dialog .actions, #move-dialog .actions { margin-top:14px; }
 .entry-location { font-size:12px; color:var(--muted); margin:0 0 6px; overflow-wrap:anywhere; }
@@ -99,11 +95,25 @@ input[type="text"] { width: 100%; padding: 10px 16px; background: var(--panel); 
 .entry details summary { width:fit-content; cursor:pointer; font-size:13px; }
 .entry details pre { margin-top:8px; }
 #entry-count { margin:0; font-size:13px; }
-#folder-path button { padding: 3px 2px; border: 0; background: transparent; color: var(--accent); font-size: 14px; }
-#folder-path button:hover { text-decoration: underline; }
-#folder-path [aria-current] { color: var(--ink); font-weight: 650; }
-.folder-separator { color: var(--muted); }
 #folder-entries { max-width: 100%; overflow-wrap: anywhere; text-align: left; }
+.workspace { display: grid; grid-template-columns: minmax(200px, 250px) minmax(0, 1fr); gap: 20px; align-items: start; }
+main { width: min(100% - 32px, 1220px); }
+.folder-sidebar { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 12px; position: sticky; top: 16px; max-height: calc(100vh - 32px); overflow: auto; }
+.folder-heading { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 10px; }
+.folder-heading h2 { margin: 0; font-size: 16px; }
+.folder-tree, .folder-tree ul { list-style: none; margin: 0; padding: 0; }
+.folder-tree ul { margin-left: 10px; padding-left: 6px; border-left: 1px solid var(--line); }
+.folder-row { display: grid; grid-template-columns: 26px minmax(0, 1fr); align-items: start; margin: 2px 0; border-radius: 6px; }
+.folder-row:has([aria-current]) { background: var(--page); }
+.folder-row button { min-height: 32px; padding: 5px; border: 0; background: transparent; }
+.folder-row button:hover { background: var(--page); text-decoration: underline; }
+.folder-row .folder-name { text-align: left; overflow-wrap: anywhere; }
+.folder-row [aria-current] { color: var(--accent); font-weight: 700; }
+#composer-location { margin: 0 0 8px; font-size: 13px; overflow-wrap: anywhere; }
+@media (max-width: 680px) {
+  .workspace { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+  .folder-sidebar { position: static; max-height: 35vh; }
+}
 </style>
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-0BYFQWWJY9"></script>
 <script>
@@ -121,11 +131,16 @@ input[type="text"] { width: 100%; padding: 10px 16px; background: var(--panel); 
 <main>
   <h1>Text Notepad</h1>
   <p>Save separate text entries in this browser. Duplicate checks ignore spaces, tabs, and line breaks.</p>
-  <div class="folder-bar">
-    <nav id="folder-path" aria-label="Folder path"></nav>
-    <button id="new-folder" type="button">New folder</button>
-  </div>
-  <div id="folders" class="folder-list" aria-label="Subfolders"></div>
+  <div class="workspace">
+    <aside class="folder-sidebar" aria-labelledby="folders-title">
+      <div class="folder-heading">
+        <h2 id="folders-title">Folders</h2>
+        <button id="new-folder" type="button">New folder</button>
+      </div>
+      <nav aria-label="Folder navigation"><ul id="folders" class="folder-tree"></ul></nav>
+    </aside>
+    <div class="workspace-content">
+      <p id="composer-location"></p>
   <form id="composer" class="editor">
     <div class="composer-title">
       <label for="entry-title">Title (optional)</label>
@@ -148,6 +163,8 @@ input[type="text"] { width: 100%; padding: 10px 16px; background: var(--panel); 
     <p id="empty">No entries yet.</p>
     <div id="entries"></div>
   </section>
+    </div>
+  </div>
 </main>
 <dialog id="duplicate" aria-labelledby="duplicate-title" aria-describedby="explanation">
   <h2 id="duplicate-title">Matching entries found</h2>
@@ -219,6 +236,7 @@ const moveDialog = document.getElementById('move-dialog');
 const moveDestination = document.getElementById('move-destination');
 const moveError = document.getElementById('move-error');
 let activeFolder = null;
+const expandedFolders = new Set([null]);
 let showAllEntries = true;
 const search = document.getElementById('entry-search');
 const allEntriesButton = document.getElementById('all-entries');
@@ -260,35 +278,71 @@ function folderPath(id, folders, separator = ' / ') {
   return ['Root', ...folderTrail(id, folders).map(folder => folder.name)].join(separator);
 }
 
-function folderButton(label, id) {
-  const button = document.createElement('button');
-  button.type = 'button';
-  button.textContent = label;
-  button.addEventListener('click', () => {
-    activeFolder = id;
-    showAllEntries = false;
-    search.value = '';
-    refresh();
-    document.querySelector('#folder-path [aria-current]')?.focus();
-  });
-  return button;
+function focusCurrentFolder() {
+  document.querySelector('#folders [aria-current]')?.focus();
 }
 
 function renderFolders(folders) {
   if (activeFolder !== null && !folders.some(folder => folder.id === activeFolder)) activeFolder = null;
-  const path = document.getElementById('folder-path');
-  const crumbs = [folderButton('Root', null)];
-  for (const folder of folderTrail(activeFolder, folders)) {
-    const separator = document.createElement('span');
-    separator.className = 'folder-separator';
-    separator.textContent = '>';
-    separator.setAttribute('aria-hidden', 'true');
-    crumbs.push(separator, folderButton(folder.name, folder.id));
+  document.getElementById('composer-location').textContent = folderPath(activeFolder, folders, ' > ');
+
+  const childrenByParent = new Map();
+  for (const folder of folders) {
+    if (!childrenByParent.has(folder.parentId)) childrenByParent.set(folder.parentId, []);
+    childrenByParent.get(folder.parentId).push(folder);
   }
-  crumbs.at(-1).setAttribute('aria-current', 'location');
-  path.replaceChildren(...crumbs);
-  const children = folders.filter(folder => folder.parentId === activeFolder);
-  document.getElementById('folders').replaceChildren(...children.map(folder => folderButton(folder.name, folder.id)));
+
+  function branch(id, name) {
+    const item = document.createElement('li');
+    const row = document.createElement('div');
+    row.className = 'folder-row';
+    const select = document.createElement('button');
+    select.type = 'button';
+    select.className = 'folder-name';
+    select.textContent = name;
+    if (id === activeFolder) select.setAttribute('aria-current', 'location');
+    select.addEventListener('click', () => {
+      activeFolder = id;
+      showAllEntries = false;
+      search.value = '';
+      refresh();
+      focusCurrentFolder();
+    });
+
+    const children = childrenByParent.get(id) ?? [];
+    if (children.length === 0) {
+      row.append(document.createElement('span'), select);
+      item.append(row);
+      return item;
+    }
+
+    const toggle = document.createElement('button');
+    toggle.type = 'button';
+    const list = document.createElement('ul');
+    list.id = id === null ? 'folder-children-root' : 'folder-children-' + id;
+    toggle.setAttribute('aria-controls', list.id);
+    for (const child of children) list.append(branch(child.id, child.name));
+
+    function updateExpansion() {
+      const expanded = expandedFolders.has(id);
+      toggle.textContent = expanded ? '▾' : '▸';
+      toggle.setAttribute('aria-expanded', String(expanded));
+      toggle.setAttribute('aria-label', (expanded ? 'Collapse ' : 'Expand ') + name);
+      list.hidden = !expanded;
+    }
+
+    toggle.addEventListener('click', () => {
+      if (expandedFolders.has(id)) expandedFolders.delete(id);
+      else expandedFolders.add(id);
+      updateExpansion();
+    });
+    updateExpansion();
+    row.append(toggle, select);
+    item.append(row, list);
+    return item;
+  }
+
+  document.getElementById('folders').replaceChildren(branch(null, 'Root'));
 }
 
 function report(message, error = false) {
@@ -596,10 +650,14 @@ document.getElementById('folder-form').addEventListener('submit', event => {
     }
     const folder = {id: crypto.randomUUID(), parentId: activeFolder, name};
     localStorage.setItem(folderKey, JSON.stringify([...folders, folder]));
+    for (const ancestor of folderTrail(folder.parentId, folders)) expandedFolders.add(ancestor.id);
+    expandedFolders.add(null);
     activeFolder = folder.id;
+    showAllEntries = false;
+    search.value = '';
     folderDialog.close();
     refresh();
-    document.querySelector('#folder-path [aria-current]')?.focus();
+    focusCurrentFolder();
     report('Folder created.');
   } catch {
     folderError.textContent = 'Could not save this folder.';
@@ -666,7 +724,7 @@ document.getElementById('move-form').addEventListener('submit', event => {
     localStorage.setItem(storageKey, JSON.stringify(entries));
     moveDialog.close();
     render(entries, folders);
-    document.querySelector('#folder-path [aria-current]')?.focus();
+    focusCurrentFolder();
     report('Entry moved to ' + folderPath(folderId, folders) + '.');
   } catch {
     moveError.textContent = 'Could not move this entry.';
