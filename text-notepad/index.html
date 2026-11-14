@@ -116,6 +116,10 @@ main { width: min(100% - 32px, 1220px); }
 }
 .search-preview { margin: 0 0 10px; }
 .entry mark { background: #ffe36d; color: #211900; }
+.folder-row .folder-name { display:flex; align-items:baseline; gap:7px; }
+.folder-icon { flex:none; font-size:14px; }
+.sidebar-entry { grid-column:2; }
+.entry[tabindex="-1"] { scroll-margin-top:16px; }
 </style>
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-0BYFQWWJY9"></script>
 <script>
@@ -284,7 +288,15 @@ function focusCurrentFolder() {
   document.querySelector('#folders [aria-current]')?.focus();
 }
 
-function renderFolders(folders) {
+function treeLabel(button, icon, name) {
+  const symbol = document.createElement('span');
+  symbol.className = 'folder-icon';
+  symbol.setAttribute('aria-hidden', 'true');
+  symbol.textContent = icon;
+  button.append(symbol, name);
+}
+
+function renderFolders(folders, entries) {
   if (activeFolder !== null && !folders.some(folder => folder.id === activeFolder)) activeFolder = null;
   document.getElementById('composer-location').textContent = folderPath(activeFolder, folders, ' > ');
 
@@ -294,6 +306,31 @@ function renderFolders(folders) {
     childrenByParent.get(folder.parentId).push(folder);
   }
 
+  const entriesByFolder = new Map();
+  for (const entry of [...entries].reverse()) {
+    const folderId = entry.folderId ?? null;
+    if (!entriesByFolder.has(folderId)) entriesByFolder.set(folderId, []);
+    entriesByFolder.get(folderId).push(entry);
+  }
+
+  function entryBranch(entry, folderId) {
+    const item = document.createElement('li');
+    item.className = 'folder-row';
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'folder-name sidebar-entry';
+    treeLabel(button, '📄', entry.title || 'Entry ' + entry.id);
+    button.addEventListener('click', () => {
+      activeFolder = folderId;
+      showAllEntries = false;
+      search.value = '';
+      refresh();
+      document.getElementById('saved-entry-' + entry.id)?.focus();
+    });
+    item.append(button);
+    return item;
+  }
+
   function branch(id, name) {
     const item = document.createElement('li');
     const row = document.createElement('div');
@@ -301,7 +338,7 @@ function renderFolders(folders) {
     const select = document.createElement('button');
     select.type = 'button';
     select.className = 'folder-name';
-    select.textContent = name;
+    treeLabel(select, '📁', name);
     if (id === activeFolder) select.setAttribute('aria-current', 'location');
     select.addEventListener('click', () => {
       activeFolder = id;
@@ -312,7 +349,8 @@ function renderFolders(folders) {
     });
 
     const children = childrenByParent.get(id) ?? [];
-    if (children.length === 0) {
+    const notes = entriesByFolder.get(id) ?? [];
+    if (children.length === 0 && notes.length === 0) {
       row.append(document.createElement('span'), select);
       item.append(row);
       return item;
@@ -324,6 +362,7 @@ function renderFolders(folders) {
     list.id = id === null ? 'folder-children-root' : 'folder-children-' + id;
     toggle.setAttribute('aria-controls', list.id);
     for (const child of children) list.append(branch(child.id, child.name));
+    for (const entry of notes) list.append(entryBranch(entry, id));
 
     function updateExpansion() {
       const expanded = expandedFolders.has(id);
@@ -385,6 +424,10 @@ function highlight(element, value, pattern) {
 function entryCard(entry, preview = false, folders = [], compact = false, pattern = null) {
   const card = document.createElement('article');
   card.className = 'entry';
+  if (!preview) {
+    card.id = 'saved-entry-' + entry.id;
+    card.tabIndex = -1;
+  }
   const title = document.createElement('h3');
   title.textContent = entry.title || 'Entry ' + entry.id;
   const header = document.createElement('div');
@@ -472,7 +515,7 @@ function entryCard(entry, preview = false, folders = [], compact = false, patter
 }
 
 function render(entries, folders = readFolders()) {
-  renderFolders(folders);
+  renderFolders(folders, entries);
   renderEntries(entries, folders);
 }
 
