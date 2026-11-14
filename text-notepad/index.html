@@ -321,11 +321,12 @@ function renderFolders(folders, entries) {
     button.className = 'folder-name sidebar-entry';
     treeLabel(button, '📄', entry.title || 'Entry ' + entry.id);
     button.addEventListener('click', () => {
+      if (!beginEdit(entry)) return;
       activeFolder = folderId;
       showAllEntries = false;
       search.value = '';
       refresh();
-      document.getElementById('saved-entry-' + entry.id)?.focus();
+      report('Editing ' + (entry.title || 'Entry ' + entry.id) + '.');
     });
     item.append(button);
     return item;
@@ -557,11 +558,11 @@ function refresh() {
 function beginEdit(entry) {
   if (editingEntry?.id === entry.id) {
     note.focus();
-    return;
+    return true;
   }
   const hasDraft = note.value !== (editingEntry?.text ?? '') ||
     entryTitle.value !== (editingEntry?.title ?? '');
-  if (hasDraft && !window.confirm('Discard the unsaved text in the editor?')) return;
+  if (hasDraft && !window.confirm('Discard the unsaved text in the editor?')) return false;
 
   editingEntry = entry;
   note.value = entry.text;
@@ -573,6 +574,7 @@ function beginEdit(entry) {
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   composer.scrollIntoView({block: 'start', behavior: reducedMotion ? 'instant' : 'smooth'});
   report('Editing ' + (entry.title || 'Entry ' + entry.id) + '.');
+  return true;
 }
 
 function resetComposerMode() {
