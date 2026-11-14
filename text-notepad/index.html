@@ -96,7 +96,11 @@ input[type="text"] { width: 100%; padding: 10px 16px; background: var(--panel); 
 .entry details pre { margin-top:8px; }
 #entry-count { margin:0; font-size:13px; }
 #folder-entries { max-width: 100%; overflow-wrap: anywhere; text-align: left; }
-.workspace { display: grid; grid-template-columns: clamp(250px, 38vw, 500px) minmax(0, 1fr); gap: 20px; align-items: start; }
+.workspace { display: grid; grid-template-columns: min(var(--sidebar-width, 250px), calc(100% - 340px)) 20px minmax(0, 1fr); align-items: start; }
+.folder-resizer { position: sticky; top: 16px; height: 56px; margin-top: 4px; cursor: col-resize; touch-action: none; border-radius: 6px; display: grid; place-items: center; }
+.folder-resizer::after { content: ""; width: 4px; height: 32px; border-radius: 4px; background: var(--muted); }
+.folder-resizer:hover::after, .folder-resizer:focus-visible::after, .workspace.resizing .folder-resizer::after { background: var(--accent); }
+.workspace.resizing { cursor: col-resize; user-select: none; }
 .folder-sidebar { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 12px; position: sticky; top: 16px; max-height: calc(100vh - 32px); overflow: auto; }
 .folder-heading { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 10px; }
 .folder-heading h2 { margin: 0; font-size: 16px; }
@@ -112,6 +116,7 @@ input[type="text"] { width: 100%; padding: 10px 16px; background: var(--panel); 
 @media (max-width: 680px) {
   .workspace { grid-template-columns: minmax(0, 1fr); gap: 12px; }
   .folder-sidebar { position: static; max-height: 35vh; }
+  .folder-resizer { display: none; }
 }
 .search-preview { margin: 0 0 10px; }
 .entry mark { background: #ffe36d; color: #211900; }
@@ -141,7 +146,7 @@ input[type="text"] { width: 100%; padding: 10px 16px; background: var(--panel); 
   <h1>Text Notepad</h1>
   <p>Save separate text entries in this browser. Duplicate checks ignore spaces, tabs, and line breaks.</p>
   <div class="workspace">
-    <aside class="folder-sidebar" aria-labelledby="folders-title">
+    <aside id="folder-sidebar" class="folder-sidebar" aria-labelledby="folders-title">
       <div class="folder-heading">
         <h2 id="folders-title">Folders</h2>
         <button id="new-folder" type="button">New folder</button>
@@ -152,6 +157,7 @@ input[type="text"] { width: 100%; padding: 10px 16px; background: var(--panel); 
       </div>
       <nav aria-label="Folder navigation"><ul id="folders" class="folder-tree"></ul></nav>
     </aside>
+    <div class="folder-resizer" role="separator" tabindex="0" aria-label="Folder panel width" aria-orientation="vertical" aria-controls="folder-sidebar" aria-valuemin="200" aria-valuenow="250"></div>
     <div class="workspace-content">
       <p id="composer-location"></p>
   <form id="composer" class="editor">
@@ -227,6 +233,61 @@ input[type="text"] { width: 100%; padding: 10px 16px; background: var(--panel); 
 </dialog>
 <script>
 'use strict';
+
+const folderResizer = document.querySelector('.folder-resizer');
+const workspace = folderResizer.parentElement;
+const folderSidebar = document.getElementById('folder-sidebar');
+const minimumSidebarWidth = 200;
+let dragStart;
+
+function maximumSidebarWidth() {
+  return workspace.clientWidth - 340;
+}
+
+function updateSidebarWidthLabel() {
+  if (folderResizer.offsetWidth === 0) return;
+  folderResizer.setAttribute('aria-valuemax', maximumSidebarWidth());
+  folderResizer.setAttribute('aria-valuenow', folderSidebar.offsetWidth);
+}
+
+function resizeSidebar(width) {
+  const clampedWidth = Math.max(minimumSidebarWidth, Math.min(width, maximumSidebarWidth()));
+  workspace.style.setProperty('--sidebar-width', `${clampedWidth}px`);
+  updateSidebarWidthLabel();
+}
+
+folderResizer.addEventListener('pointerdown', (event) => {
+  if (event.button !== 0 || dragStart) return;
+  dragStart = { pointerId: event.pointerId, x: event.clientX, width: folderSidebar.offsetWidth };
+  folderResizer.setPointerCapture(event.pointerId);
+  workspace.classList.add('resizing');
+});
+
+folderResizer.addEventListener('pointermove', (event) => {
+  if (event.pointerId !== dragStart?.pointerId) return;
+  resizeSidebar(dragStart.width + event.clientX - dragStart.x);
+});
+
+folderResizer.addEventListener('lostpointercapture', () => {
+  dragStart = null;
+  workspace.classList.remove('resizing');
+});
+
+folderResizer.addEventListener('keydown', (event) => {
+  const width = folderSidebar.offsetWidth;
+  const widths = {
+    ArrowLeft: width - 20,
+    ArrowRight: width + 20,
+    Home: minimumSidebarWidth,
+    End: maximumSidebarWidth()
+  };
+  if (!Object.hasOwn(widths, event.key)) return;
+  event.preventDefault();
+  resizeSidebar(widths[event.key]);
+});
+
+updateSidebarWidthLabel();
+window.addEventListener('resize', updateSidebarWidthLabel);
 
 const legacyKey = 'zegulas.text-notepad.note.v1';
 const storageKey = 'zegulas.text-notepad.entries.v1';
