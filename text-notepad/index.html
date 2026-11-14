@@ -105,6 +105,9 @@ pre { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; font: 14px/1.55
 #matches .entry { margin-top: 8px; }
 input[type="text"] { width: 100%; padding: 10px 16px; background: var(--panel); color: var(--ink); border: 1px solid var(--line); border-radius: 8px; font: inherit; }
 .composer-title { padding: 12px 16px; border-bottom: 1px solid var(--line); }
+#entry-description { height: auto; min-height: 0; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; font: inherit; }
+label[for="entry-description"] { margin-top: 10px; }
+.entry-description { margin: 0 0 8px; white-space: pre-wrap; overflow-wrap: anywhere; }
 .composer-title label, #rename label { border: 0; padding: 0 0 6px; }
 .entry-header { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 6px; overflow-wrap: anywhere; }
 #rename .actions { margin-top: 16px; }
@@ -266,6 +269,8 @@ input[type="text"] { width: 100%; padding: 10px 16px; background: var(--panel); 
     <div class="composer-title">
       <label for="entry-title">Title (optional)</label>
       <input type="text" id="entry-title" maxlength="120" placeholder="Give this entry a name">
+      <label for="entry-description">Description (optional)</label>
+      <textarea id="entry-description" rows="2" placeholder="Add context for this entry"></textarea>
     </div>
     <label id="note-label" for="note">New entry</label>
     <textarea id="note" spellcheck="false" placeholder="Paste or type text here…" required></textarea>
@@ -279,7 +284,7 @@ input[type="text"] { width: 100%; padding: 10px 16px; background: var(--panel); 
     <div class="list-controls">
       <button type="button" id="all-entries" aria-pressed="true">All entries</button>
       <button type="button" id="folder-entries" aria-pressed="false">Root</button>
-      <input type="search" id="entry-search" aria-label="Search all entries" placeholder="Search title, text, or folder">
+      <input type="search" id="entry-search" aria-label="Search all entries" placeholder="Search title, description, text, or folder">
     </div>
     <p id="entry-count" role="status" aria-atomic="true"></p>
     <p id="empty">No entries yet.</p>
@@ -439,6 +444,7 @@ const note = document.getElementById('note');
 const status = document.getElementById('status');
 const dialog = document.getElementById('duplicate');
 const entryTitle = document.getElementById('entry-title');
+const entryDescription = document.getElementById('entry-description');
 const renameDialog = document.getElementById('rename');
 const renameTitle = document.getElementById('rename-title');
 const renameError = document.getElementById('rename-error');
@@ -487,10 +493,10 @@ function writeWorkspace(entries, folders = readFolders()) {
   localStorage.setItem(workspaceKey, JSON.stringify({entries, folders}));
 }
 
-function reviseEntry(entry, text, title, now = new Date().toISOString()) {
-  const previous = {text: entry.text, title: entry.title ?? '', savedAt: entry.contentSavedAt ?? entry.updatedAt ?? entry.createdAt ?? null};
+function reviseEntry(entry, text, title, description = entry.description ?? '', now = new Date().toISOString()) {
+  const previous = {text: entry.text, title: entry.title ?? '', description: entry.description ?? '', savedAt: entry.contentSavedAt ?? entry.updatedAt ?? entry.createdAt ?? null};
   return {
-    ...entry, text, title, updatedAt: now, contentSavedAt: now,
+    ...entry, text, title, description, updatedAt: now, contentSavedAt: now,
     history: [...(entry.history ?? []), previous]
   };
 }
@@ -517,16 +523,19 @@ historyButton.addEventListener('click', () => {
       load.type = 'button';
       load.textContent = 'Load into editor';
       load.addEventListener('click', () => {
-        const hasDraft = note.value !== editingEntry.text || entryTitle.value !== (editingEntry.title ?? '');
+        const hasDraft = hasEntryDraft();
         if (hasDraft && !window.confirm('Replace your unsaved draft with this version?')) return;
         editingEntry = entry;
         note.value = version.text;
         entryTitle.value = version.title;
+        entryDescription.value = version.description ?? '';
         historyDialog.close();
         revealEditor();
         report('Earlier version loaded. Save changes to restore it.');
       });
-      details.append(summary, preview, load);
+      details.append(summary);
+      appendEntryDescription(details, version.description);
+      details.append(preview, load);
       historyList.append(details);
     }
     historyDialog.showModal();
@@ -708,6 +717,15 @@ function highlight(element, value, pattern) {
   element.append(value.slice(cursor));
 }
 
+function appendEntryDescription(container, description, pattern) {
+  if (!description) return;
+  const paragraph = document.createElement('p');
+  paragraph.className = 'entry-description';
+  if (pattern) highlight(paragraph, description, pattern);
+  else paragraph.textContent = description;
+  container.append(paragraph);
+}
+
 function entryCard(entry, preview = false, folders = [], compact = false, pattern = null) {
   const card = document.createElement('article');
   card.className = 'entry';
@@ -761,6 +779,7 @@ function entryCard(entry, preview = false, folders = [], compact = false, patter
   const content = document.createElement('pre');
   content.textContent = preview && entry.text.length > 400 ? entry.text.slice(0, 400) + '…' : entry.text;
   card.append(header);
+  appendEntryDescription(card, entry.description, pattern);
   if (preview || compact) {
     const location = document.createElement('p');
     location.className = 'entry-location';
@@ -814,7 +833,7 @@ function renderEntries(entries, folders) {
     if (!showAllEntries) return (entry.folderId ?? null) === activeFolder;
     if (!pattern) return true;
     const title = entry.title || 'Entry ' + entry.id;
-    return [title, entry.text, folderPath(entry.folderId, folders)]
+    return [title, entry.description ?? '', entry.text, folderPath(entry.folderId, folders)]
       .some(value => !value.matchAll(pattern).next().done);
   });
   allEntriesButton.setAttribute('aria-pressed', String(showAllEntries));
@@ -840,18 +859,23 @@ function refresh() {
   }
 }
 
+function hasEntryDraft() {
+  return note.value !== (editingEntry?.text ?? '') ||
+    entryTitle.value !== (editingEntry?.title ?? '') ||
+    entryDescription.value !== (editingEntry?.description ?? '');
+}
+
 function beginEdit(entry) {
   if (editingEntry?.id === entry.id) {
     revealEditor();
     return true;
   }
-  const hasDraft = note.value !== (editingEntry?.text ?? '') ||
-    entryTitle.value !== (editingEntry?.title ?? '');
-  if (hasDraft && !window.confirm('Discard the unsaved text in the editor?')) return false;
+  if (hasEntryDraft() && !window.confirm('Discard the unsaved changes in the editor?')) return false;
 
   editingEntry = entry;
   note.value = entry.text;
   entryTitle.value = entry.title ?? '';
+  entryDescription.value = entry.description ?? '';
   entryTitle.placeholder = 'Entry ' + entry.id;
   entryTitle.setAttribute('data-editing', '');
   noteLabel.textContent = 'Edit entry';
@@ -886,22 +910,23 @@ function clearDraft(message) {
   resetComposerMode();
   note.value = '';
   entryTitle.value = '';
+  entryDescription.value = '';
   note.focus();
   report(message);
 }
 
-function save(entries, text, title, replaceIds = new Set(), folderId = activeFolder) {
+function save(entries, text, title, description, replaceIds = new Set(), folderId = activeFolder) {
   const nextId = entries.reduce((max, entry) => Math.max(max, entry.id), 0) + 1;
   const next = entries.filter(entry => !replaceIds.has(entry.id));
   const now = new Date().toISOString();
   if (editingEntry) {
     const index = next.findIndex(entry => entry.id === editingEntry.id);
     const previous = next[index];
-    if (previous.text !== text || (previous.title ?? '') !== title) {
-      next[index] = reviseEntry(previous, text, title, now);
+    if (previous.text !== text || (previous.title ?? '') !== title || (previous.description ?? '') !== description) {
+      next[index] = reviseEntry(previous, text, title, description, now);
     }
   } else {
-    next.push({id: nextId, text, title, folderId, createdAt: now, updatedAt: now, contentSavedAt: now});
+    next.push({id: nextId, text, title, description, folderId, createdAt: now, updatedAt: now, contentSavedAt: now});
   }
   try {
     writeWorkspace(next);
@@ -918,6 +943,7 @@ composer.addEventListener('submit', event => {
   event.preventDefault();
   const text = note.value;
   const title = entryTitle.value.trim();
+  const description = entryDescription.value.trim();
   const key = comparisonText(text);
   if (!key) {
     report('Enter some text before saving the entry.', true);
@@ -928,18 +954,19 @@ composer.addEventListener('submit', event => {
     const entries = readEntries();
     if (editingEntry) {
       const current = entries.find(entry => entry.id === editingEntry.id);
-      if (!current || current.text !== editingEntry.text || current.title !== editingEntry.title) {
+      if (!current || current.text !== editingEntry.text || current.title !== editingEntry.title ||
+          (current.description ?? '') !== (editingEntry.description ?? '')) {
         report('The saved entry changed. Copy your draft before reopening the entry.', true);
         return;
       }
     }
     const matches = entries.filter(entry => entry.id !== editingEntry?.id && comparisonText(entry.text) === key);
     if (!matches.length) {
-      save(entries, text, title);
+      save(entries, text, title, description);
       return;
     }
     const folders = readFolders();
-    pending = {text, title, entries, matches, folderId: activeFolder};
+    pending = {text, title, description, entries, matches, folderId: activeFolder};
     document.getElementById('explanation').textContent = editingEntry
       ? 'Other entries match your edited text when whitespace is ignored.'
       : 'These entries match your new text when whitespace is ignored.';
@@ -955,7 +982,7 @@ composer.addEventListener('submit', event => {
 });
 
 function resolveMatch(choice) {
-  const {text, title, entries, matches, folderId} = pending;
+  const {text, title, description, entries, matches, folderId} = pending;
   pending = undefined;
   dialog.close();
   if (choice === 'discard') {
@@ -969,7 +996,7 @@ function resolveMatch(choice) {
       return;
     }
     const replaceIds = new Set(choice === 'replace' ? matches.map(entry => entry.id) : []);
-    save(entries, text, title, replaceIds, folderId);
+    save(entries, text, title, description, replaceIds, folderId);
   } catch {
     report('Could not read your saved entries. Your text is still in the input.', true);
   }
@@ -998,7 +1025,8 @@ document.getElementById('rename-form').addEventListener('submit', event => {
       entries[index] = reviseEntry(previous, previous.text, title);
     }
     writeWorkspace(entries);
-    if (editingEntry?.id === editingId && editingEntry.title === previous.title && editingEntry.text === previous.text) {
+    if (editingEntry?.id === editingId && editingEntry.title === previous.title && editingEntry.text === previous.text &&
+        (editingEntry.description ?? '') === (previous.description ?? '')) {
       if (entryTitle.value === (previous.title ?? '')) entryTitle.value = entries[index].title;
       editingEntry = entries[index];
     }
@@ -1198,10 +1226,11 @@ function parseBackup(text) {
     if (!isRecord(entry) || !Number.isSafeInteger(entry.id) || entry.id < 1 ||
         entry.id >= Number.MAX_SAFE_INTEGER || ids.has(entry.id) || typeof entry.text !== 'string' ||
         (entry.title != null && !isTitle(entry.title)) ||
+        (entry.description != null && typeof entry.description !== 'string') ||
         (entry.folderId != null && !parents.has(entry.folderId)) ||
         (entry.history != null && !Array.isArray(entry.history))) throw new Error('Invalid entry');
     ids.add(entry.id);
-    const result = {id: entry.id, text: entry.text, title: entry.title ?? '', folderId: entry.folderId ?? null};
+    const result = {id: entry.id, text: entry.text, title: entry.title ?? '', description: entry.description ?? '', folderId: entry.folderId ?? null};
     for (const field of ['createdAt', 'updatedAt', 'contentSavedAt']) {
       if (entry[field] == null) continue;
       if (!isDate(entry[field])) throw new Error('Invalid timestamp');
@@ -1210,8 +1239,9 @@ function parseBackup(text) {
     if (entry.history) {
       result.history = entry.history.map(version => {
         if (!isRecord(version) || typeof version.text !== 'string' || !isTitle(version.title) ||
+            (version.description != null && typeof version.description !== 'string') ||
             (version.savedAt !== null && !isDate(version.savedAt))) throw new Error('Invalid version');
-        return {text: version.text, title: version.title, savedAt: version.savedAt};
+        return {text: version.text, title: version.title, description: version.description ?? '', savedAt: version.savedAt};
       });
     }
     return result;
