@@ -78,6 +78,11 @@ h3 { margin: 0 0 6px; font-size: 13px; }
 pre { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; font: 14px/1.55 ui-monospace, Menlo, Consolas, monospace; }
 #matches { margin-bottom: 16px; }
 #matches .entry { margin-top: 8px; }
+input[type="text"] { width: 100%; padding: 10px 16px; background: var(--panel); color: var(--ink); border: 1px solid var(--line); border-radius: 8px; font: inherit; }
+.composer-title { padding: 12px 16px; border-bottom: 1px solid var(--line); }
+.composer-title label, #rename label { border: 0; padding: 0 0 6px; }
+.entry-header { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 6px; overflow-wrap: anywhere; }
+#rename .actions { margin-top: 16px; }
 </style>
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-0BYFQWWJY9"></script>
 <script>
@@ -96,6 +101,10 @@ pre { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; font: 14px/1.55
   <h1>Text Notepad</h1>
   <p>Save separate text entries in this browser. Duplicate checks ignore spaces, tabs, and line breaks.</p>
   <form id="composer" class="editor">
+    <div class="composer-title">
+      <label for="entry-title">Title (optional)</label>
+      <input type="text" id="entry-title" maxlength="120" placeholder="Give this entry a name">
+    </div>
     <label for="note">New entry</label>
     <textarea id="note" spellcheck="false" placeholder="Paste or type text here…" required></textarea>
     <div class="composer-actions"><button class="primary">Add entry</button></div>
@@ -117,6 +126,18 @@ pre { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; font: 14px/1.55
     <button type="button" id="keep" class="primary">Keep all</button>
   </div>
 </dialog>
+<dialog id="rename" aria-labelledby="rename-heading">
+  <form id="rename-form">
+    <h2 id="rename-heading">Rename entry</h2>
+    <label for="rename-title">Title (optional)</label>
+    <input type="text" id="rename-title" maxlength="120" autofocus>
+    <p id="rename-error" role="status"></p>
+    <div class="actions">
+      <button type="button" id="rename-cancel">Cancel</button>
+      <button class="primary">Save title</button>
+    </div>
+  </form>
+</dialog>
 <script>
 'use strict';
 
@@ -125,6 +146,11 @@ const storageKey = 'zegulas.text-notepad.entries.v1';
 const note = document.getElementById('note');
 const status = document.getElementById('status');
 const dialog = document.getElementById('duplicate');
+const entryTitle = document.getElementById('entry-title');
+const renameDialog = document.getElementById('rename');
+const renameTitle = document.getElementById('rename-title');
+const renameError = document.getElementById('rename-error');
+let editingId;
 let pending;
 
 function comparisonText(text) {
@@ -147,10 +173,26 @@ function entryCard(entry, preview = false) {
   const card = document.createElement('article');
   card.className = 'entry';
   const title = document.createElement('h3');
-  title.textContent = 'Entry ' + entry.id;
+  title.textContent = entry.title || 'Entry ' + entry.id;
+  const header = document.createElement('div');
+  header.className = 'entry-header';
+  header.append(title);
+  if (!preview) {
+    const rename = document.createElement('button');
+    rename.type = 'button';
+    rename.textContent = 'Rename';
+    rename.setAttribute('aria-label', 'Rename ' + title.textContent);
+    rename.addEventListener('click', () => {
+      editingId = entry.id;
+      renameTitle.value = entry.title || '';
+      renameError.textContent = '';
+      renameDialog.showModal();
+    });
+    header.append(rename);
+  }
   const content = document.createElement('pre');
   content.textContent = preview && entry.text.length > 400 ? entry.text.slice(0, 400) + '…' : entry.text;
-  card.append(title, content);
+  card.append(header, content);
   return card;
 }
 
@@ -173,14 +215,15 @@ function refresh() {
 
 function clearDraft(message) {
   note.value = '';
+  entryTitle.value = '';
   note.focus();
   report(message);
 }
 
-function save(entries, text, replaceIds = new Set()) {
+function save(entries, text, title, replaceIds = new Set()) {
   const nextId = entries.reduce((max, entry) => Math.max(max, entry.id), 0) + 1;
   const next = entries.filter(entry => !replaceIds.has(entry.id));
-  next.push({id: nextId, text});
+  next.push({id: nextId, text, title});
   try {
     localStorage.setItem(storageKey, JSON.stringify(next));
   } catch {
@@ -194,6 +237,7 @@ function save(entries, text, replaceIds = new Set()) {
 document.getElementById('composer').addEventListener('submit', event => {
   event.preventDefault();
   const text = note.value;
+  const title = entryTitle.value.trim();
   const key = comparisonText(text);
   if (!key) {
     report('Enter some text before adding an entry.', true);
@@ -204,10 +248,10 @@ document.getElementById('composer').addEventListener('submit', event => {
     const entries = readEntries();
     const matches = entries.filter(entry => comparisonText(entry.text) === key);
     if (!matches.length) {
-      save(entries, text);
+      save(entries, text, title);
       return;
     }
-    pending = {text, entries, matches};
+    pending = {text, title, entries, matches};
     const previews = document.createDocumentFragment();
     for (const match of matches) previews.append(entryCard(match, true));
     document.getElementById('matches').replaceChildren(previews);
@@ -218,7 +262,7 @@ document.getElementById('composer').addEventListener('submit', event => {
 });
 
 function resolveMatch(choice) {
-  const {text, entries, matches} = pending;
+  const {text, title, entries, matches} = pending;
   pending = undefined;
   dialog.close();
   if (choice === 'discard') {
@@ -232,7 +276,7 @@ function resolveMatch(choice) {
       return;
     }
     const replaceIds = new Set(choice === 'replace' ? matches.map(entry => entry.id) : []);
-    save(entries, text, replaceIds);
+    save(entries, text, title, replaceIds);
   } catch {
     report('Could not read your saved entries. Your text is still in the input.', true);
   }
@@ -244,6 +288,26 @@ for (const choice of ['discard', 'replace', 'keep']) {
 dialog.addEventListener('cancel', () => { pending = undefined; });
 window.addEventListener('storage', event => {
   if (event.key === storageKey || event.key === legacyKey || event.key === null) refresh();
+});
+document.getElementById('rename-cancel').addEventListener('click', () => renameDialog.close());
+document.getElementById('rename-form').addEventListener('submit', event => {
+  event.preventDefault();
+  try {
+    const entries = readEntries();
+    const index = entries.findIndex(entry => entry.id === editingId);
+    if (index < 0) {
+      renameError.textContent = 'This entry is no longer available.';
+      return;
+    }
+    entries[index] = {...entries[index], title: renameTitle.value.trim()};
+    localStorage.setItem(storageKey, JSON.stringify(entries));
+    renameDialog.close();
+    render(entries);
+    document.querySelectorAll('#entries button')[entries.length - 1 - index]?.focus();
+    report('Title updated.');
+  } catch {
+    renameError.textContent = 'Could not save the title. Your changes are still here.';
+  }
 });
 refresh();
 </script>
