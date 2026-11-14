@@ -123,6 +123,7 @@ main { width: min(100% - 32px, 1220px); }
 .folder-controls { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
 .folder-row button { min-height: 44px; }
 .folder-row .folder-toggle { width: 44px; font-size: 21px; line-height: 1; }
+#entry-title[data-editing]::placeholder { color: var(--ink); opacity: 1; }
 </style>
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-0BYFQWWJY9"></script>
 <script>
@@ -576,6 +577,7 @@ function beginEdit(entry) {
   note.value = entry.text;
   entryTitle.value = entry.title ?? '';
   entryTitle.placeholder = 'Entry ' + entry.id;
+  entryTitle.setAttribute('data-editing', '');
   noteLabel.textContent = 'Edit entry';
   submitEntry.textContent = 'Save changes';
   cancelEdit.hidden = false;
@@ -593,6 +595,7 @@ function revealEditor() {
 function resetComposerMode() {
   editingEntry = undefined;
   entryTitle.placeholder = 'Give this entry a name';
+  entryTitle.removeAttribute('data-editing');
   noteLabel.textContent = 'New entry';
   submitEntry.textContent = 'Add entry';
   cancelEdit.hidden = true;
