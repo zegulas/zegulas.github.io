@@ -557,7 +557,7 @@ function refresh() {
 
 function beginEdit(entry) {
   if (editingEntry?.id === entry.id) {
-    note.focus();
+    revealEditor();
     return true;
   }
   const hasDraft = note.value !== (editingEntry?.text ?? '') ||
@@ -567,18 +567,24 @@ function beginEdit(entry) {
   editingEntry = entry;
   note.value = entry.text;
   entryTitle.value = entry.title ?? '';
+  entryTitle.placeholder = 'Entry ' + entry.id;
   noteLabel.textContent = 'Edit entry';
   submitEntry.textContent = 'Save changes';
   cancelEdit.hidden = false;
-  note.focus({preventScroll: true});
-  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  composer.scrollIntoView({block: 'start', behavior: reducedMotion ? 'instant' : 'smooth'});
+  revealEditor();
   report('Editing ' + (entry.title || 'Entry ' + entry.id) + '.');
   return true;
 }
 
+function revealEditor() {
+  entryTitle.focus({preventScroll: true});
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  entryTitle.scrollIntoView({block: 'center', behavior: reducedMotion ? 'instant' : 'smooth'});
+}
+
 function resetComposerMode() {
   editingEntry = undefined;
+  entryTitle.placeholder = 'Give this entry a name';
   noteLabel.textContent = 'New entry';
   submitEntry.textContent = 'Add entry';
   cancelEdit.hidden = true;
