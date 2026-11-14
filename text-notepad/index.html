@@ -31,7 +31,7 @@
 }
 * { box-sizing: border-box; }
 body { margin: 0; background: var(--page); color: var(--ink); font: 15px/1.55 system-ui, sans-serif; }
-main { width: min(100% - 32px, 960px); margin: clamp(24px, 7vh, 72px) auto; }
+main { width: 100%; padding-inline: clamp(12px, 1.5vw, 24px); margin: clamp(24px, 7vh, 72px) auto; }
 h1 { font-size: clamp(36px, 6vw, 56px); line-height: 1.05; letter-spacing: -.055em; margin: 0 0 12px; }
 p { margin: 0 0 20px; color: var(--muted); }
 .editor { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
@@ -97,7 +97,6 @@ input[type="text"] { width: 100%; padding: 10px 16px; background: var(--panel); 
 #entry-count { margin:0; font-size:13px; }
 #folder-entries { max-width: 100%; overflow-wrap: anywhere; text-align: left; }
 .workspace { display: grid; grid-template-columns: minmax(200px, 250px) minmax(0, 1fr); gap: 20px; align-items: start; }
-main { width: min(100% - 32px, 1220px); }
 .folder-sidebar { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 12px; position: sticky; top: 16px; max-height: calc(100vh - 32px); overflow: auto; }
 .folder-heading { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 10px; }
 .folder-heading h2 { margin: 0; font-size: 16px; }
