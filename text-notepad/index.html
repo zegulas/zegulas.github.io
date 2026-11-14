@@ -40,7 +40,7 @@ label { font-weight: 650; border-bottom: 1px solid var(--line); }
 textarea {
   display: block;
   width: 100%;
-  height: 57vh;
+  height: 28vh;
   min-height: 220px;
   padding: 16px;
   border: 0;
@@ -70,143 +70,171 @@ h2 { margin: 0 0 8px; font-size: 22px; letter-spacing: -.03em; }
 button { border: 1px solid var(--line); border-radius: 8px; padding: 8px 12px; background: var(--panel); color: var(--ink); font: inherit; font-size: 13px; cursor: pointer; }
 button:hover { border-color: var(--accent); }
 .primary { background: var(--accent); color: var(--button-text); border-color: var(--accent); font-weight: 650; }
+form { margin: 0; }
+.composer-actions { padding: 12px 16px; border-top: 1px solid var(--line); }
+.saved { margin-top: 28px; }
+.entry { margin-top: 12px; padding: 14px 16px; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; }
+h3 { margin: 0 0 6px; font-size: 13px; }
+pre { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; font: 14px/1.55 ui-monospace, Menlo, Consolas, monospace; }
+#matches { margin-bottom: 16px; }
+#matches .entry { margin-top: 8px; }
 </style>
 </head>
 <body>
 <main>
   <h1>Text Notepad</h1>
-  <p>Paste or type in one note. Your browser saves it automatically.</p>
-  <div class="editor">
-    <label for="note">Your note</label>
-    <textarea id="note" spellcheck="false" placeholder="Paste or type here…"></textarea>
+  <p>Save separate text entries in this browser. Duplicate checks ignore spaces, tabs, and line breaks.</p>
+  <form id="composer" class="editor">
+    <label for="note">New entry</label>
+    <textarea id="note" spellcheck="false" placeholder="Paste or type text here…" required></textarea>
+    <div class="composer-actions"><button class="primary">Add entry</button></div>
     <footer id="status" role="status"></footer>
-  </div>
+  </form>
+  <section class="saved" aria-labelledby="saved-title">
+    <h2 id="saved-title">Saved entries</h2>
+    <p id="empty">No entries yet.</p>
+    <div id="entries"></div>
+  </section>
 </main>
-<dialog id="duplicate" aria-labelledby="duplicate-title" aria-describedby="matches">
-  <h2 id="duplicate-title">This text is already in your note</h2>
-  <p id="matches"></p>
+<dialog id="duplicate" aria-labelledby="duplicate-title" aria-describedby="explanation">
+  <h2 id="duplicate-title">Matching entries found</h2>
+  <p id="explanation">These entries match your new text when whitespace is ignored.</p>
+  <div id="matches"></div>
   <div class="actions">
-    <button type="button" id="discard" autofocus>Discard new paste</button>
-    <button type="button" id="replace">Keep new paste only</button>
-    <button type="button" id="keep" class="primary">Keep all copies</button>
+    <button type="button" id="discard" autofocus>Discard new</button>
+    <button type="button" id="replace">Keep new only</button>
+    <button type="button" id="keep" class="primary">Keep all</button>
   </div>
 </dialog>
 <script>
 'use strict';
 
-const storageKey = 'zegulas.text-notepad.note.v1';
+const legacyKey = 'zegulas.text-notepad.note.v1';
+const storageKey = 'zegulas.text-notepad.entries.v1';
 const note = document.getElementById('note');
 const status = document.getElementById('status');
 const dialog = document.getElementById('duplicate');
-let pendingPaste;
+let pending;
+
+function comparisonText(text) {
+  return text.replace(/\s/g, '');
+}
+
+function readEntries() {
+  const saved = localStorage.getItem(storageKey);
+  if (saved !== null) return JSON.parse(saved);
+  const legacy = localStorage.getItem(legacyKey);
+  return legacy ? [{id: 1, text: legacy}] : [];
+}
 
 function report(message, error = false) {
   status.textContent = message;
   status.toggleAttribute('data-error', error);
 }
 
-function save() {
+function entryCard(entry, preview = false) {
+  const card = document.createElement('article');
+  card.className = 'entry';
+  const title = document.createElement('h3');
+  title.textContent = 'Entry ' + entry.id;
+  const content = document.createElement('pre');
+  content.textContent = preview && entry.text.length > 400 ? entry.text.slice(0, 400) + '…' : entry.text;
+  card.append(title, content);
+  return card;
+}
+
+function render(entries) {
+  const list = document.getElementById('entries');
+  const cards = document.createDocumentFragment();
+  for (const entry of [...entries].reverse()) cards.append(entryCard(entry));
+  list.replaceChildren(cards);
+  document.getElementById('empty').hidden = entries.length > 0;
+}
+
+function refresh() {
   try {
-    localStorage.setItem(storageKey, note.value);
-    report('Saved in this browser');
+    render(readEntries());
+    report('Entries are stored in this browser.');
   } catch {
-    report('Could not save in this browser. Copy your note before closing this page.', true);
+    report('Saved entries are unavailable in this browser.', true);
   }
 }
 
-try {
-  note.value = localStorage.getItem(storageKey) ?? '';
-  report(note.value ? 'Saved in this browser' : 'Autosave is on');
-} catch {
-  report('Browser storage is unavailable. Copy your note before closing this page.', true);
-}
-
-note.addEventListener('input', save);
-
-function findMatches(source, pasted) {
-  const matches = [];
-  let line = 1;
-  let scanned = 0;
-  const lineSpan = pasted.replace(/\n$/, '').split('\n').length - 1;
-  for (let start = source.indexOf(pasted); start !== -1; start = source.indexOf(pasted, start + pasted.length)) {
-    while (scanned < start) {
-      if (source[scanned++] === '\n') line++;
-    }
-    matches.push({start, end: start + pasted.length, firstLine: line, lastLine: line + lineSpan});
-  }
-  return matches;
-}
-
-// Remove the earlier matches and any selected text, then insert at the original caret.
-function replaceCopies(source, pasted, start, end, matches) {
-  const ranges = [...matches, {start, end}].sort((a, b) => a.start - b.start);
-  let remaining = '';
-  let cursor = 0;
-  let insertion = start;
-  for (const range of ranges) {
-    const from = Math.max(cursor, range.start);
-    if (range.end <= from) continue;
-    remaining += source.slice(cursor, from);
-    insertion -= Math.max(0, Math.min(start, range.end) - from);
-    cursor = range.end;
-  }
-  remaining += source.slice(cursor);
-  return {
-    value: remaining.slice(0, insertion) + pasted + remaining.slice(insertion),
-    caret: insertion + pasted.length
-  };
-}
-
-note.addEventListener('paste', event => {
-  const pasted = event.clipboardData?.getData('text/plain').replace(/\r\n?/g, '\n');
-  if (!pasted?.trim()) return;
-  const source = note.value;
-  const matches = findMatches(source, pasted);
-  if (!matches.length) return;
-
-  event.preventDefault();
-  pendingPaste = {source, pasted, matches, start: note.selectionStart, end: note.selectionEnd};
-  const locations = matches.slice(0, 12).map(({firstLine, lastLine}) =>
-    firstLine === lastLine ? 'line ' + firstLine : 'lines ' + firstLine + '–' + lastLine
-  );
-  if (matches.length > locations.length) locations.push('and ' + (matches.length - locations.length) + ' more');
-  document.getElementById('matches').textContent = 'Found at ' + locations.join(', ') + '. Keeping only the new paste removes the earlier matches.';
-  dialog.showModal();
-});
-
-function finishPaste(choice) {
-  const {source, pasted, start, end, matches} = pendingPaste;
-  pendingPaste = undefined;
-  dialog.close();
+function clearDraft(message) {
+  note.value = '';
   note.focus();
-  if (choice === 'discard') return;
-  if (note.value !== source) {
-    report('The note changed while the dialog was open. Paste again to check for matches.', true);
+  report(message);
+}
+
+function save(entries, text, replaceIds = new Set()) {
+  const nextId = entries.reduce((max, entry) => Math.max(max, entry.id), 0) + 1;
+  const next = entries.filter(entry => !replaceIds.has(entry.id));
+  next.push({id: nextId, text});
+  try {
+    localStorage.setItem(storageKey, JSON.stringify(next));
+  } catch {
+    report('Could not save the entry. Your text is still in the input.', true);
     return;
   }
-  if (choice === 'replace') {
-    const {value, caret} = replaceCopies(source, pasted, start, end, matches);
-    note.value = value;
-    note.setSelectionRange(caret, caret);
-  } else {
-    let insertAt = start;
-    for (const match of matches) {
-      if ((start < match.end && end > match.start) || (start === end && start > match.start && start < match.end)) insertAt = Math.max(insertAt, end, match.end);
-    }
-    note.setRangeText(pasted, insertAt, Math.max(insertAt, end), 'end');
+  render(next);
+  clearDraft('Entry ' + nextId + ' saved.');
+}
+
+document.getElementById('composer').addEventListener('submit', event => {
+  event.preventDefault();
+  const text = note.value;
+  const key = comparisonText(text);
+  if (!key) {
+    report('Enter some text before adding an entry.', true);
+    return;
   }
-  save();
+
+  try {
+    const entries = readEntries();
+    const matches = entries.filter(entry => comparisonText(entry.text) === key);
+    if (!matches.length) {
+      save(entries, text);
+      return;
+    }
+    pending = {text, entries, matches};
+    const previews = document.createDocumentFragment();
+    for (const match of matches) previews.append(entryCard(match, true));
+    document.getElementById('matches').replaceChildren(previews);
+    dialog.showModal();
+  } catch {
+    report('Could not read your saved entries. Your text is still in the input.', true);
+  }
+});
+
+function resolveMatch(choice) {
+  const {text, entries, matches} = pending;
+  pending = undefined;
+  dialog.close();
+  if (choice === 'discard') {
+    clearDraft('New entry discarded.');
+    return;
+  }
+  try {
+    if (JSON.stringify(readEntries()) !== JSON.stringify(entries)) {
+      refresh();
+      report('Saved entries changed in another tab. Select Add entry to check again.', true);
+      return;
+    }
+    const replaceIds = new Set(choice === 'replace' ? matches.map(entry => entry.id) : []);
+    save(entries, text, replaceIds);
+  } catch {
+    report('Could not read your saved entries. Your text is still in the input.', true);
+  }
 }
 
 for (const choice of ['discard', 'replace', 'keep']) {
-  document.getElementById(choice).addEventListener('click', () => finishPaste(choice));
+  document.getElementById(choice).addEventListener('click', () => resolveMatch(choice));
 }
-dialog.addEventListener('cancel', () => { pendingPaste = undefined; });
+dialog.addEventListener('cancel', () => { pending = undefined; });
 window.addEventListener('storage', event => {
-  if (event.key !== storageKey && event.key !== null) return;
-  note.value = event.newValue ?? '';
-  report('Note updated from another tab');
+  if (event.key === storageKey || event.key === legacyKey || event.key === null) refresh();
 });
+refresh();
 </script>
 </body>
 </html>
