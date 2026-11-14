@@ -342,6 +342,7 @@ function renderFolders(folders, entries) {
     if (id === activeFolder) select.setAttribute('aria-current', 'location');
     select.addEventListener('click', () => {
       activeFolder = id;
+      expandedFolders.add(id);
       showAllEntries = false;
       search.value = '';
       refresh();
