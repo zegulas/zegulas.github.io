@@ -99,6 +99,10 @@ input[type="text"] { width: 100%; padding: 10px 16px; background: var(--panel); 
 .entry details summary { width:fit-content; cursor:pointer; font-size:13px; }
 .entry details pre { margin-top:8px; }
 #entry-count { margin:0; font-size:13px; }
+#folder-path button { padding: 3px 2px; border: 0; background: transparent; color: var(--accent); font-size: 14px; }
+#folder-path button:hover { text-decoration: underline; }
+#folder-path [aria-current] { color: var(--ink); font-weight: 650; }
+.folder-separator { color: var(--muted); }
 </style>
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-0BYFQWWJY9"></script>
 <script>
@@ -274,7 +278,11 @@ function renderFolders(folders) {
   const path = document.getElementById('folder-path');
   const crumbs = [folderButton('Root', null)];
   for (const folder of folderTrail(activeFolder, folders)) {
-    crumbs.push(document.createTextNode(' / '), folderButton(folder.name, folder.id));
+    const separator = document.createElement('span');
+    separator.className = 'folder-separator';
+    separator.textContent = '>';
+    separator.setAttribute('aria-hidden', 'true');
+    crumbs.push(separator, folderButton(folder.name, folder.id));
   }
   crumbs.at(-1).setAttribute('aria-current', 'location');
   path.replaceChildren(...crumbs);
