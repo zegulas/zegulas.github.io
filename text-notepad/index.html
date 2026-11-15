@@ -204,6 +204,8 @@ label[for="entry-description"] { margin-top: 10px; }
 .folder-icon-filters { position: absolute; width: 0; height: 0; pointer-events: none; }
 .sidebar-entry { grid-column:2; }
 .entry[tabindex="-1"] { scroll-margin-top:16px; }
+#tree-filter { width: 100%; margin-bottom: 8px; padding: 7px 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); color: var(--ink); font: inherit; }
+#tree-filter-empty { margin: 0; }
 .folder-controls { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
 .folder-row .folder-toggle { width: 44px; font-size: 21px; line-height: 1; }
 #entry-title[data-editing]::placeholder { color: var(--ink); opacity: 1; }
@@ -260,6 +262,8 @@ label[for="entry-description"] { margin-top: 10px; }
         <button type="button" id="collapse-folders">Collapse all</button>
         <button type="button" id="expand-folders">Expand all</button>
       </div>
+      <input id="tree-filter" type="search" aria-label="Filter folders and entries" placeholder="Filter folders and entries" aria-controls="folders">
+      <p id="tree-filter-empty" role="status"></p>
       <nav aria-label="Folder navigation"><ul id="folders" class="folder-tree"></ul></nav>
     </aside>
     <div class="folder-resizer" role="separator" tabindex="0" aria-label="Folder panel width" aria-orientation="vertical" aria-controls="folder-sidebar" aria-valuemin="200" aria-valuenow="250"></div>
@@ -462,6 +466,8 @@ const moveError = document.getElementById('move-error');
 let activeFolder = null;
 const expandedFolders = new Set([null]);
 let showAllEntries = true;
+const treeFilter = document.getElementById('tree-filter');
+const collapsedFilterFolders = new Set();
 const search = document.getElementById('entry-search');
 const allEntriesButton = document.getElementById('all-entries');
 const folderEntriesButton = document.getElementById('folder-entries');
@@ -573,9 +579,9 @@ function treeLabel(button, icon, name) {
   button.append(symbol, name);
 }
 
-function toggleFolderExpansion(id) {
-  if (expandedFolders.has(id)) expandedFolders.delete(id);
-  else expandedFolders.add(id);
+function toggleFolderExpansion(id, expansionSet = expandedFolders) {
+  if (expansionSet.has(id)) expansionSet.delete(id);
+  else expansionSet.add(id);
 }
 
 function renderFolders(folders, entries) {
@@ -593,6 +599,28 @@ function renderFolders(folders, entries) {
     const folderId = entry.folderId ?? null;
     if (!entriesByFolder.has(folderId)) entriesByFolder.set(folderId, []);
     entriesByFolder.get(folderId).push(entry);
+  }
+
+  const query = treeFilter.value.trim().toLowerCase();
+  const matchingEntries = new Set();
+  const visibleFolders = new Set();
+  if (query) {
+    const parents = new Map(folders.map(folder => [folder.id, folder.parentId]));
+    function includePath(id) {
+      while (parents.has(id) && !visibleFolders.has(id)) {
+        visibleFolders.add(id);
+        id = parents.get(id);
+      }
+    }
+    for (const folder of folders) {
+      if (folder.name.toLowerCase().includes(query)) includePath(folder.id);
+    }
+    for (const entry of entries) {
+      if ((entry.title || 'Entry ' + entry.id).toLowerCase().includes(query)) {
+        matchingEntries.add(entry.id);
+        includePath(entry.folderId ?? null);
+      }
+    }
   }
 
   function entryBranch(entry, folderId) {
@@ -636,14 +664,16 @@ function renderFolders(folders, entries) {
     if (id === activeFolder) select.setAttribute('aria-current', 'location');
     select.addEventListener('click', () => {
       activeFolder = id;
-      toggleFolderExpansion(id);
+      if (!query) toggleFolderExpansion(id);
       showAllEntries = false;
       search.value = '';
       refresh();
       focusCurrentFolder();
     });
 
-    if (children.length === 0 && notes.length === 0) {
+    const visibleChildren = query ? children.filter(child => visibleFolders.has(child.id)) : children;
+    const visibleNotes = query ? notes.filter(entry => matchingEntries.has(entry.id)) : notes;
+    if (visibleChildren.length === 0 && visibleNotes.length === 0) {
       row.append(document.createElement('span'), select);
       item.append(row);
       return item;
@@ -657,12 +687,14 @@ function renderFolders(folders, entries) {
     toggle.setAttribute('aria-controls', list.id);
     const childAccents = folderAccents.filter(color => color !== accent);
     children.forEach((child, index) => {
-      list.append(branch(child.id, child.name, childAccents[index % childAccents.length]));
+      if (!query || visibleFolders.has(child.id)) {
+        list.append(branch(child.id, child.name, childAccents[index % childAccents.length]));
+      }
     });
-    for (const entry of notes) list.append(entryBranch(entry, id));
+    for (const entry of visibleNotes) list.append(entryBranch(entry, id));
 
     function updateExpansion() {
-      const expanded = expandedFolders.has(id);
+      const expanded = query ? !collapsedFilterFolders.has(id) : expandedFolders.has(id);
       toggle.textContent = expanded ? '▾' : '▸';
       toggle.setAttribute('aria-expanded', String(expanded));
       toggle.setAttribute('aria-label', (expanded ? 'Collapse ' : 'Expand ') + name);
@@ -670,7 +702,7 @@ function renderFolders(folders, entries) {
     }
 
     toggle.addEventListener('click', () => {
-      toggleFolderExpansion(id);
+      toggleFolderExpansion(id, query ? collapsedFilterFolders : expandedFolders);
       updateExpansion();
     });
     updateExpansion();
@@ -679,7 +711,11 @@ function renderFolders(folders, entries) {
     return item;
   }
 
-  document.getElementById('folders').replaceChildren(branch(null, 'Root', null));
+  const tree = document.getElementById('folders');
+  const noMatches = query && visibleFolders.size === 0 && matchingEntries.size === 0;
+  document.getElementById('tree-filter-empty').textContent = noMatches ? 'No matching folders or entries.' : '';
+  if (noMatches) tree.replaceChildren();
+  else tree.replaceChildren(branch(null, 'Root', null));
 }
 
 function report(message, error = false) {
@@ -1164,6 +1200,15 @@ function setAllFoldersExpanded(expanded) {
   try {
     const folders = readFolders();
     const entries = readEntries();
+    if (treeFilter.value.trim()) {
+      collapsedFilterFolders.clear();
+      if (!expanded) {
+        collapsedFilterFolders.add(null);
+        for (const folder of folders) collapsedFilterFolders.add(folder.id);
+      }
+      renderFolders(folders, entries);
+      return;
+    }
     expandedFolders.clear();
     if (expanded) {
       expandedFolders.add(null);
@@ -1175,6 +1220,14 @@ function setAllFoldersExpanded(expanded) {
   }
 }
 
+treeFilter.addEventListener('input', () => {
+  collapsedFilterFolders.clear();
+  try {
+    renderFolders(readFolders(), readEntries());
+  } catch {
+    document.getElementById('tree-filter-empty').textContent = 'Could not load the folder tree.';
+  }
+});
 document.getElementById('expand-folders').addEventListener('click', () => setAllFoldersExpanded(true));
 document.getElementById('collapse-folders').addEventListener('click', () => setAllFoldersExpanded(false));
 
